@@ -7,9 +7,12 @@ import com.daniel.ltc20.dao.TweetBaseContentDao;
 import com.daniel.ltc20.dao.TweetRelationMentionDao;
 import com.daniel.ltc20.dao.TweetRelationPostViewDao;
 import com.daniel.ltc20.dao.TweetRelationTopicDao;
+import com.daniel.ltc20.domain.TweetRelationPostView;
 import com.daniel.ltc20.model.TweetContent;
 import com.daniel.ltc20.service.TweetContentService;
 import com.daniel.ltc20.service.TweetLoginService;
+import com.daniel.ltc20.utils.TimeUtil;
+import com.daniel.ltc20.utils.TweetUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -19,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -36,9 +40,11 @@ public class TweetContentServiceImpl implements TweetContentService {
 
     @Autowired
     private TweetRelationTopicDao tweetRelationTopicDao;
+
     @Autowired
     private TweetLoginService tweetLoginService;
 
+    @Override
     public void insertTweetContent(TweetContent tweetContent) {
         if (ObjectUtil.isEmpty(tweetContent)) {
             return;
@@ -56,6 +62,55 @@ public class TweetContentServiceImpl implements TweetContentService {
             tweetRelationTopicDao.insertTweetRelationTopics(tweetContent.getTweetTopics());
         }
         log.info("写入数据库成功，{}", tweetContent);
+    }
+
+    @Override
+    public TweetContent queryTweetContentByUrl(WebDriver browser, String tweetUrl) {
+        if (ObjectUtil.isEmpty(browser) || StrUtil.isBlank(tweetUrl)) {
+            log.info("browser和tweetUrl不应该是空！！！");
+            return null;
+        }
+        try {
+            TweetContent tweetContent = new TweetContent();
+            browser.get(tweetUrl);
+            Thread.sleep(3000);
+            Integer index = TweetUtil.locateIndex(browser, tweetUrl);
+            log.info("该链接的内容位于页面的第{}个", index);
+            if (ObjectUtil.isEmpty(index)) {
+                return null;
+            }
+            String tweetContentCreateTime = TweetUtil.getTweetContentCreateTime(browser, index);
+            String tweetId = tweetUrl.substring(tweetUrl.lastIndexOf('/') + 1);
+            String tweetContentText = TweetUtil.getTweetContentText(browser, index);
+            long tweetViewsNumber = TweetUtil.getTweetViewsNumber(browser, index);
+
+            tweetContent.getTweetBaseContent().setTweetId(tweetId);
+            tweetContent.getTweetBaseContent().setUserId(TweetUtil.extractUsername(tweetUrl));
+            tweetContent.getTweetBaseContent().setTweetContent(tweetContentText);
+            tweetContent.getTweetBaseContent().setLatestViewNumber(tweetViewsNumber);
+            tweetContent.getTweetBaseContent().setTweetUrl(tweetUrl);
+            tweetContent.getTweetBaseContent().setTweetContentCreateTime(TimeUtil.convertToShanghaiTime(tweetContentCreateTime));
+            tweetContent.getTweetBaseContent().setTweetContentCollectTime(new Date());
+            tweetContent.getTweetBaseContent().setCreateTime(new Date());
+            tweetContent.getTweetBaseContent().setModifyTime(new Date());
+
+            tweetContent.setTweetMentions(TweetUtil.getTweetMentions(browser, index, tweetId));
+            tweetContent.setTweetTopics(TweetUtil.getTweetTopics(browser, index, tweetId));
+
+            List<TweetRelationPostView> postViews = new ArrayList<>();
+            postViews.add(TweetRelationPostView.builder()
+                    .tweetId(tweetId)
+                    .collectDate(TimeUtil.getCurrentDateInShanghai())
+                    .viewNumber(tweetViewsNumber)
+                    .createTime(new Date())
+                    .build());
+            tweetContent.setPostViews(postViews);
+
+            return tweetContent;
+        } catch (Exception e) {
+            log.error("获取tweet内容失败,{}", e);
+        }
+        return null;
     }
 
     @Override

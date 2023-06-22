@@ -12,7 +12,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Builder
 public class TweetRelationMention {
-    private int id;
+    private Integer id;
     private String tweetId;
     private String tweetMention;
     private Date createTime;

@@ -1,10 +1,5 @@
 package com.daniel.ltc20.controller;
 
-import com.daniel.ltc20.dao.TweetBaseContentDao;
-import com.daniel.ltc20.dao.TweetRelationMentionDao;
-import com.daniel.ltc20.dao.TweetRelationPostViewDao;
-import com.daniel.ltc20.dao.TweetRelationTopicDao;
-import com.daniel.ltc20.domain.TweetBaseContent;
 import com.daniel.ltc20.model.TweetContent;
 import com.daniel.ltc20.service.TweetContentService;
 import com.daniel.ltc20.service.TweetLoginService;
@@ -26,23 +21,19 @@ public class TestController {
     @Autowired
     private TweetContentService tweetContentService;
 
-    @Autowired
-    private TweetBaseContentDao tweetBaseContentDao;
-
-    @Autowired
-    private TweetRelationMentionDao tweetRelationMentionDao;
-
-    @Autowired
-    private TweetRelationPostViewDao tweetRelationPostViewDao;
-
-    @Autowired
-    private TweetRelationTopicDao tweetRelationTopicDao;
-
-
     @RequestMapping(value = "/testLog", method = RequestMethod.GET)
     public void testLog() throws InterruptedException {
-        List<String> ltc20 = tweetContentService.searchLatestTweetUrls("ltc20", 1000, true);
-        Thread.sleep(10000);
-        System.out.println();
+        List<String> urls = tweetContentService.searchLatestTweetUrls("ltc20", 500, true);
+        WebDriver webDriver = tweetLoginService.loginWithRandomAccount();
+
+        for (String url : urls) {
+            TweetContent tweetContent = tweetContentService.queryTweetContentByUrl(webDriver, url);
+            tweetContent.getTweetBaseContent().setSearchKey("ltc20");
+            tweetContent.getTweetBaseContent().setLabel("latest");
+            log.info("{}",tweetContent);
+            tweetContentService.insertTweetContent(tweetContent);
+        }
+        webDriver.quit();
+
     }
 }
