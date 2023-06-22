@@ -1,5 +1,11 @@
 package com.daniel.ltc20.controller;
 
+import com.daniel.ltc20.dao.TweetBaseContentDao;
+import com.daniel.ltc20.dao.TweetRelationMentionDao;
+import com.daniel.ltc20.dao.TweetRelationPostViewDao;
+import com.daniel.ltc20.dao.TweetRelationTopicDao;
+import com.daniel.ltc20.domain.TweetBaseContent;
+import com.daniel.ltc20.model.TweetContent;
 import com.daniel.ltc20.service.TweetContentService;
 import com.daniel.ltc20.service.TweetLoginService;
 import lombok.extern.slf4j.Slf4j;
@@ -20,10 +26,22 @@ public class TestController {
     @Autowired
     private TweetContentService tweetContentService;
 
+    @Autowired
+    private TweetBaseContentDao tweetBaseContentDao;
+
+    @Autowired
+    private TweetRelationMentionDao tweetRelationMentionDao;
+
+    @Autowired
+    private TweetRelationPostViewDao tweetRelationPostViewDao;
+
+    @Autowired
+    private TweetRelationTopicDao tweetRelationTopicDao;
+
+
     @RequestMapping(value = "/testLog", method = RequestMethod.GET)
     public void testLog() throws InterruptedException {
         WebDriver browser = tweetLoginService.loginWithRandomAccount();
-
         List<String> ltc20 = tweetContentService.searchLatestTweetUrls(browser, "ltc20", 1000, true);
         Thread.sleep(10000);
         browser.quit();

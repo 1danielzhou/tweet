@@ -3,12 +3,18 @@ package com.daniel.ltc20.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.daniel.ltc20.dao.TweetBaseContentDao;
+import com.daniel.ltc20.dao.TweetRelationMentionDao;
+import com.daniel.ltc20.dao.TweetRelationPostViewDao;
+import com.daniel.ltc20.dao.TweetRelationTopicDao;
+import com.daniel.ltc20.model.TweetContent;
 import com.daniel.ltc20.service.TweetContentService;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,6 +24,37 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 public class TweetContentServiceImpl implements TweetContentService {
+    @Autowired
+    private TweetBaseContentDao tweetBaseContentDao;
+
+    @Autowired
+    private TweetRelationMentionDao tweetRelationMentionDao;
+
+    @Autowired
+    private TweetRelationPostViewDao tweetRelationPostViewDao;
+
+    @Autowired
+    private TweetRelationTopicDao tweetRelationTopicDao;
+
+    public void insertTweetContent(TweetContent tweetContent) {
+        if (ObjectUtil.isEmpty(tweetContent)) {
+            return;
+        }
+        if (ObjectUtil.isNotEmpty(tweetContent.getTweetBaseContent())) {
+            tweetBaseContentDao.insertTweetBaseContent(tweetContent.getTweetBaseContent());
+        }
+        if (CollUtil.isNotEmpty(tweetContent.getTweetMentions())) {
+            tweetRelationMentionDao.insertTweetRelationMentions(tweetContent.getTweetMentions());
+        }
+        if (CollUtil.isNotEmpty(tweetContent.getPostViews())) {
+            tweetRelationPostViewDao.insertTweetRelationPostViews(tweetContent.getPostViews());
+        }
+        if (CollUtil.isNotEmpty(tweetContent.getTweetTopics())) {
+            tweetRelationTopicDao.insertTweetRelationTopics(tweetContent.getTweetTopics());
+        }
+        log.info("写入数据库成功，{}", tweetContent);
+    }
+
     @Override
     public List<String> searchLatestTweetUrls(WebDriver browser, String searchKey, int size, boolean searchPast24H) {
         if (ObjectUtil.isEmpty(browser) || StrUtil.isEmpty(searchKey)) {
@@ -39,7 +76,7 @@ public class TweetContentServiceImpl implements TweetContentService {
                     String url = parsedTweetUrl(cellInnerDivElement);
                     if (StrUtil.isNotBlank(url)) {
                         count++;
-                        System.out.println(url);
+                        log.info(StrUtil.format("解析获取到的url为{}", url));
                         urls.add(url);
                     }
                     if (searchPast24H && !isWithinPast24H(cellInnerDivElement)) {
@@ -87,7 +124,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             try {
                 WebElement tweetContentCreateTimeDiv = cellInnerDivElement.findElement(By.xpath(".//time"));
                 String timeSinceNow = tweetContentCreateTimeDiv.getText();
-                System.out.println(timeSinceNow);
+                log.info(StrUtil.format("解析获取到的时间为：{}", timeSinceNow));
                 if (TIME_PATTERN.matcher(timeSinceNow).matches()) {
                     return true;
                 } else {
