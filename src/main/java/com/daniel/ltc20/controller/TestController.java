@@ -41,10 +41,8 @@ public class TestController {
 
     @RequestMapping(value = "/testLog", method = RequestMethod.GET)
     public void testLog() throws InterruptedException {
-        WebDriver browser = tweetLoginService.loginWithRandomAccount();
-        List<String> ltc20 = tweetContentService.searchLatestTweetUrls(browser, "ltc20", 1000, true);
+        List<String> ltc20 = tweetContentService.searchLatestTweetUrls("ltc20", 1000, true);
         Thread.sleep(10000);
-        browser.quit();
         System.out.println();
     }
 }

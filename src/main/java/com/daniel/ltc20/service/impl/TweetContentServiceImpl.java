@@ -9,6 +9,7 @@ import com.daniel.ltc20.dao.TweetRelationPostViewDao;
 import com.daniel.ltc20.dao.TweetRelationTopicDao;
 import com.daniel.ltc20.model.TweetContent;
 import com.daniel.ltc20.service.TweetContentService;
+import com.daniel.ltc20.service.TweetLoginService;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -35,6 +36,8 @@ public class TweetContentServiceImpl implements TweetContentService {
 
     @Autowired
     private TweetRelationTopicDao tweetRelationTopicDao;
+    @Autowired
+    private TweetLoginService tweetLoginService;
 
     public void insertTweetContent(TweetContent tweetContent) {
         if (ObjectUtil.isEmpty(tweetContent)) {
@@ -56,9 +59,14 @@ public class TweetContentServiceImpl implements TweetContentService {
     }
 
     @Override
-    public List<String> searchLatestTweetUrls(WebDriver browser, String searchKey, int size, boolean searchPast24H) {
-        if (ObjectUtil.isEmpty(browser) || StrUtil.isEmpty(searchKey)) {
-            log.error("browser和searchKey不允许为空！！！");
+    public List<String> searchLatestTweetUrls(String searchKey, int size, boolean searchPast24H) {
+        if (StrUtil.isEmpty(searchKey)) {
+            log.error("searchKey不允许为空！！！");
+            return new ArrayList<>();
+        }
+        WebDriver browser = tweetLoginService.loginWithRandomAccount();
+        if (ObjectUtil.isEmpty(browser)) {
+            log.error("browser不允许为空！！！");
             return new ArrayList<>();
         }
         List<String> urls = new ArrayList<>();
@@ -94,6 +102,10 @@ public class TweetContentServiceImpl implements TweetContentService {
             }
         } catch (Exception e) {
             log.error("获取最新推特Urls时出现错误，请检查响应的代码！！！");
+        } finally {
+            if (ObjectUtil.isNotEmpty(browser)) {
+                browser.quit();
+            }
         }
         log.info(StrUtil.format("搜索关键词{}，一共获取{}条url", searchKey, urls.size()));
         return urls;
