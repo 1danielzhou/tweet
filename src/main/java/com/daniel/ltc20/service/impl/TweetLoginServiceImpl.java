@@ -3,6 +3,7 @@ package com.daniel.ltc20.service.impl;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.daniel.ltc20.domain.TweetAccount;
+import com.daniel.ltc20.service.TweetAccountService;
 import com.daniel.ltc20.service.TweetLoginService;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
@@ -10,6 +11,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,8 +19,28 @@ import java.util.ArrayList;
 @Slf4j
 @Service
 public class TweetLoginServiceImpl implements TweetLoginService {
-    public static final String START_URL = "https://twitter.com/search?q=ltc20&src=typed_query&f=live";
+    @Autowired
+    private TweetAccountService tweetAccountService;
+    private static final String START_URL = "https://twitter.com/search?q=ltc20&src=typed_query&f=live";
+    private static final int MAX_RETRY_COUNT = 10;
 
+    public WebDriver loginWithRandomAccount() {
+        WebDriver browser = null;
+        int retryCount = 0;
+        while (retryCount < MAX_RETRY_COUNT) {
+            try {
+                TweetAccount tweetAccount = tweetAccountService.getRandomTweetAccount();
+                browser = login(tweetAccount);
+                if (browser != null) {
+                    break;
+                }
+            } catch (Exception e) {
+                log.error("登录tweet账号失败，尝试再次登录。错误信息为{}", e);
+            }
+            retryCount++;
+        }
+        return browser;
+    }
 
     @Override
     public WebDriver login(TweetAccount tweetAccount) {

@@ -5,4 +5,6 @@ import org.openqa.selenium.WebDriver;
 
 public interface TweetLoginService {
     public WebDriver login(TweetAccount tweetAccount);
+
+    public WebDriver loginWithRandomAccount();
 }
