@@ -2,7 +2,7 @@ package com.daniel.ltc20.service.impl;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import com.daniel.ltc20.model.Tweet;
+import com.daniel.ltc20.domain.TweetAccount;
 import com.daniel.ltc20.service.TweetLoginService;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
@@ -21,9 +21,9 @@ public class TweetLoginServiceImpl implements TweetLoginService {
 
 
     @Override
-    public WebDriver login(Tweet tweet) {
-        if (ObjectUtil.isEmpty(tweet) || StrUtil.isEmpty(tweet.getNumber()) || StrUtil.isEmpty(tweet.getPassword()) || StrUtil.isEmpty(tweet.getUserId())) {
-            log.info("{}的参数不合法，不支持登录操作", tweet);
+    public WebDriver login(TweetAccount tweetAccount) {
+        if (ObjectUtil.isEmpty(tweetAccount) || StrUtil.isEmpty(tweetAccount.getNumber()) || StrUtil.isEmpty(tweetAccount.getPassword()) || StrUtil.isEmpty(tweetAccount.getUserId())) {
+            log.info("{}的参数不合法，不支持登录操作", tweetAccount);
             return null;
         }
         WebDriver browser = getBrowser();
@@ -39,11 +39,11 @@ public class TweetLoginServiceImpl implements TweetLoginService {
                 log.info("已经登录了，不需要重复登录");
                 return browser;
             }
-            if (!inputNumber(browser, tweet.getNumber()) || !inputPassword(browser, tweet.getPassword()) || !inputUserId(browser, tweet.getUserId())) {
-                log.info("{}，登录失败", tweet);
+            if (!inputNumber(browser, tweetAccount.getNumber()) || !inputPassword(browser, tweetAccount.getPassword()) || !inputUserId(browser, tweetAccount.getUserId())) {
+                log.info("{}，登录失败", tweetAccount);
                 return null;
             }
-            log.info("{}，登录成功", tweet);
+            log.info("{}，登录成功", tweetAccount);
             return browser;
         } catch (Exception e) {
             log.error("登录失败");

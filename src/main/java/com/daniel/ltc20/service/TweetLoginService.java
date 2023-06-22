@@ -1,8 +1,8 @@
 package com.daniel.ltc20.service;
 
-import com.daniel.ltc20.model.Tweet;
+import com.daniel.ltc20.domain.TweetAccount;
 import org.openqa.selenium.WebDriver;
 
 public interface TweetLoginService {
-    public WebDriver login(Tweet tweet);
+    public WebDriver login(TweetAccount tweetAccount);
 }
