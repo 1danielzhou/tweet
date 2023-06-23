@@ -6,24 +6,26 @@
         <result column="keyword" property="keyword"/>
         <result column="init_status" property="initStatus"/>
         <result column="init_data_number" property="initDataNumber"/>
+        <result column="is_deleted" property="isDeleted"/>
         <result column="create_time" property="createTime"/>
+        <result column="modify_time" property="modifyTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
-        , keyword,init_status,init_data_number, create_time
+        , keyword,init_status,init_data_number,is_deleted, create_time,modify_time
     </sql>
 
     <insert id="insertTweetSearchKeyword" parameterType="com.daniel.ltc20.domain.TweetSearchKeyword">
-        INSERT INTO tweet_search_keyword (keyword, init_status,init_data_number, create_time)
-        VALUES (#{keyword}, #{initStatus},#{initDataNumber}, #{createTime})
+        INSERT INTO tweet_search_keyword (keyword, init_status,init_data_number,is_deleted, create_time,modify_time)
+        VALUES (#{keyword}, #{initStatus},#{initDataNumber},#{isDeleted}, #{createTime},#{modifyTime})
     </insert>
 
     <insert id="insertTweetSearchKeywords" parameterType="java.util.List">
-        INSERT INTO tweet_search_keyword (keyword,init_status,init_data_number, create_time)
+        INSERT INTO tweet_search_keyword (keyword,init_status,init_data_number,is_deleted, create_time,modify_time)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            ( #{keyword},#{initStatus},#{initDataNumber}, #{item.createTime})
+            ( #{keyword},#{initStatus},#{initDataNumber},#{isDeleted}, #{item.createTime},#{modifyTime})
         </foreach>
     </insert>
 
@@ -31,12 +33,20 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM tweet_search_keyword
+        WHERE is_deleted = 0
     </select>
 
     <select id="queryTweetSearchKeywordsByKeyword" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM tweet_search_keyword
-        WHERE keyword = #{keyword}
+        WHERE keyword = #{keyword} AND is_deleted = 0
     </select>
+
+    <update id="deleteById">
+        UPDATE
+            tweet_search_keyword
+        SET is_deleted = 1
+        WHERE id = #{id}
+    </update>
 </mapper>

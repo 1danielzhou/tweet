@@ -16,5 +16,7 @@ public class TweetSearchKeyword {
     private String keyword;
     private Integer initStatus;
     private Integer initDataNumber;
+    private Integer isDeleted;
     private Date createTime;
+    private Date modifyTime;
 }

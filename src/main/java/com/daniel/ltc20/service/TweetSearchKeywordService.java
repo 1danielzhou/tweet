@@ -9,4 +9,6 @@ public interface TweetSearchKeywordService {
     void insert(TweetSearchKeyword tweetSearchKeyword);
 
     List<TweetSearchKeyword> queryAllTweetSearchKeyword();
+
+    void deleteById(Integer id);
 }

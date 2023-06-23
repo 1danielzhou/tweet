@@ -26,7 +26,9 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
                 .builder()
                 .keyword(keyword)
                 .initStatus(0)
+                .isDeleted(0)
                 .createTime(new Date())
+                .modifyTime(new Date())
                 .build();
         this.insert(searchKeyword);
     }
@@ -46,5 +48,13 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
     @Override
     public List<TweetSearchKeyword> queryAllTweetSearchKeyword() {
         return tweetSearchKeywordDao.queryTweetSearchKeywords();
+    }
+
+    @Override
+    public void deleteById(Integer id) {
+        if(ObjectUtil.isEmpty(id)){
+            return;
+        }
+        tweetSearchKeywordDao.deleteById(id);
     }
 }

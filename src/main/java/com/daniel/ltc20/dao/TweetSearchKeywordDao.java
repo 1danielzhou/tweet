@@ -14,4 +14,6 @@ public interface TweetSearchKeywordDao {
     List<TweetSearchKeyword> queryTweetSearchKeywords();
 
     List<TweetSearchKeyword> queryTweetSearchKeywordsByKeyword(String keyword);
+
+    void deleteById(Integer id);
 }
