@@ -11,18 +11,15 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @Controller
-public class ThymeleafController {
+public class TweetInfoController {
 
     @Autowired
     private TweetSearchKeywordService tweetSearchKeywordService;
 
-    /*
-     * http://localhost:9012/012-springboot-thymeleaf/springboot/thymeleaf/index
-     * */
-    @RequestMapping(value = "/springboot/thymeleaf/index")
+    @RequestMapping(value = "/tweet/info/management")
     public String index(HttpServletRequest request, Model model) {
         List<TweetSearchKeyword> tweetSearchKeywords = tweetSearchKeywordService.queryAllTweetSearchKeyword();
         model.addAttribute("data", tweetSearchKeywords);
-        return "index";
+        return "tweet_management";
     }
 }

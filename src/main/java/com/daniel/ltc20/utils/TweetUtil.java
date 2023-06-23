@@ -130,7 +130,7 @@ public class TweetUtil {
     public static long formatNumber(String number) {
         if (number.matches("\\d+")) {
             return Long.parseLong(number);
-        } else if (number.endsWith("k")) {
+        } else if (number.endsWith("k")||number.endsWith("K")) {
             float value = Float.parseFloat(number.substring(0, number.length() - 1));
             return (long) (value * 1000);
         } else if (number.endsWith("M")) {

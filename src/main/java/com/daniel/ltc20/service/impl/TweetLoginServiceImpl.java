@@ -138,7 +138,7 @@ public class TweetLoginServiceImpl implements TweetLoginService {
         ChromeOptions chromeOptions = new ChromeOptions();
         chromeOptions.addArguments("--disable-gpu");
         chromeOptions.addArguments("--start-minimized");
-//        chromeOptions.addArguments("--headless");
+        chromeOptions.addArguments("--headless");
         chromeOptions.addArguments("--no-sandbox");
         ArrayList<String> list = new ArrayList<>();
         list.add("enable-automation");

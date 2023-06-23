@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -126,6 +125,14 @@ public class TweetContentServiceImpl implements TweetContentService {
             browser.get(searchUrl);
             Thread.sleep(3000);
             int count = 0;
+
+            String js_bottom = "window.scrollTo(0, document.body.scrollHeight);";
+            JavascriptExecutor jsExecutor = (JavascriptExecutor) browser;
+
+            long prevScrollHeight = 0;
+            long currScrollHeight = (long) jsExecutor.executeScript("return document.body.scrollHeight;");
+
+
             while (true) {
                 List<WebElement> cellInnerDivElements = browser.findElements(By.xpath("//section//div[@data-testid=\"cellInnerDiv\"]"));
                 if (CollUtil.isEmpty(cellInnerDivElements)) {
@@ -138,7 +145,11 @@ public class TweetContentServiceImpl implements TweetContentService {
                         log.info(StrUtil.format("解析获取到的url为{}", url));
                         urls.add(url);
                     }
-                    if (searchPast24H && !isWithinPast24H(cellInnerDivElement)) {
+                    if (searchPast24H && !isWithinPast48H(cellInnerDivElement)) {
+                        count = size;
+                        break;
+                    }
+                    if (!isWithinPast30Days(cellInnerDivElement)) {
                         count = size;
                         break;
                     }
@@ -146,10 +157,14 @@ public class TweetContentServiceImpl implements TweetContentService {
                 if (count >= size) {
                     break;
                 }
-                String js_bottom = "window.scrollTo(0, document.body.scrollHeight);";
-                JavascriptExecutor jsExecutor = (JavascriptExecutor) browser;
                 jsExecutor.executeScript(js_bottom);
                 Thread.sleep(3000);
+                prevScrollHeight = currScrollHeight;
+                currScrollHeight = (long) jsExecutor.executeScript("return document.body.scrollHeight;");
+                if (currScrollHeight == prevScrollHeight) {
+                    log.info("滚到底了");
+                    break;
+                }
             }
         } catch (Exception e) {
             log.error("获取最新推特Urls时出现错误，请检查响应的代码！！！");
@@ -158,18 +173,19 @@ public class TweetContentServiceImpl implements TweetContentService {
                 browser.quit();
             }
         }
-        log.info(StrUtil.format("搜索关键词{}，一共获取{}条url", searchKey, urls.size()));
-        return CollectionUtil.removeDuplicates(urls);
+        List<String> uniqueUrls = CollectionUtil.removeDuplicates(urls);
+        log.info(StrUtil.format("搜索关键词{}，一共获取{}条url。去重后还有{}条url", searchKey, urls.size(), uniqueUrls.size()));
+        return uniqueUrls;
     }
 
     @Override
     public Long searchStorePass24HTweet(String searchKey) {
-        return searchStoreTweet(searchKey,true);
+        return searchStoreTweet(searchKey, true);
     }
 
     @Override
     public Long initTweetContentByNewKeyword(String searchKey) {
-        return searchStoreTweet(searchKey,false);
+        return searchStoreTweet(searchKey, false);
     }
 
     private Long searchStoreTweet(String searchKey, boolean searchPast24H) {
@@ -223,24 +239,42 @@ public class TweetContentServiceImpl implements TweetContentService {
         return "";
     }
 
-    private boolean isWithinPast24H(WebElement cellInnerDivElement) {
+    private boolean isWithinPast48H(WebElement cellInnerDivElement) {
         if (ObjectUtil.isEmpty(cellInnerDivElement)) {
             return false;
         }
         int RETRY_LIMIT = 3;
-        Pattern TIME_PATTERN = Pattern.compile("^\\d+[mh]$");
         for (int i = 0; i < RETRY_LIMIT; i++) {
             try {
                 WebElement tweetContentCreateTimeDiv = cellInnerDivElement.findElement(By.xpath(".//time"));
-                String timeSinceNow = tweetContentCreateTimeDiv.getText();
-                log.info(StrUtil.format("解析获取到的时间为：{}", timeSinceNow));
-                if (TIME_PATTERN.matcher(timeSinceNow).matches()) {
-                    return true;
-                } else {
-                    return false;
-                }
+                String utcDatetime = tweetContentCreateTimeDiv.getAttribute("datetime");
+                Date shanghaiDate = TimeUtil.convertToShanghaiTime(utcDatetime);
+                log.info(StrUtil.format("解析获取到的时间为：{}", shanghaiDate));
+                return TimeUtil.isWithin48Hours(shanghaiDate);
             } catch (Exception e) {
-                log.error("{}", e);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    log.error("{}", e);
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean isWithinPast30Days(WebElement cellInnerDivElement) {
+        if (ObjectUtil.isEmpty(cellInnerDivElement)) {
+            return false;
+        }
+        int RETRY_LIMIT = 3;
+        for (int i = 0; i < RETRY_LIMIT; i++) {
+            try {
+                WebElement tweetContentCreateTimeDiv = cellInnerDivElement.findElement(By.xpath(".//time"));
+                String utcDatetime = tweetContentCreateTimeDiv.getAttribute("datetime");
+                Date shanghaiDate = TimeUtil.convertToShanghaiTime(utcDatetime);
+                log.info(StrUtil.format("解析获取到的时间为：{}", shanghaiDate));
+                return TimeUtil.isWithin30Days(shanghaiDate);
+            } catch (Exception e) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ex) {

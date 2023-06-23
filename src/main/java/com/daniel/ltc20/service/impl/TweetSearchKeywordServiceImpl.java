@@ -27,6 +27,7 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
                 .keyword(keyword)
                 .initStatus(0)
                 .isDeleted(0)
+                .refreshDataFlag(0)
                 .createTime(new Date())
                 .modifyTime(new Date())
                 .build();
@@ -52,9 +53,99 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
 
     @Override
     public void deleteById(Integer id) {
-        if(ObjectUtil.isEmpty(id)){
+        if (ObjectUtil.isEmpty(id)) {
             return;
         }
         tweetSearchKeywordDao.deleteById(id);
+    }
+
+    @Override
+    public void updateInfo(String searchKey, Long size) {
+        if (ObjectUtil.isEmpty(searchKey) || ObjectUtil.isEmpty(size)) {
+            return;
+        }
+        List<TweetSearchKeyword> tweetSearchKeywords = tweetSearchKeywordDao.queryTweetSearchKeywordsByKeyword(searchKey);
+        if (CollUtil.isEmpty(tweetSearchKeywords)) {
+            return;
+        }
+        TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywords.get(0);
+        Integer initDataNumber = tweetSearchKeyword.getInitDataNumber();
+        if (ObjectUtil.isEmpty(initDataNumber)) {
+            initDataNumber = 0;
+        }
+        tweetSearchKeywordDao.update(TweetSearchKeyword
+                .builder()
+                .id(tweetSearchKeyword.getId())
+                .initDataNumber(size.intValue() + initDataNumber)
+                .initStatus(2)
+                .modifyTime(new Date())
+                .build());
+    }
+
+    @Override
+    public boolean setInitStatus(String searchKey) {
+        if (StrUtil.isBlank(searchKey)) {
+            return false;
+        }
+        List<TweetSearchKeyword> tweetSearchKeywords = tweetSearchKeywordDao.queryTweetSearchKeywordsByKeyword(searchKey);
+        if (CollUtil.isEmpty(tweetSearchKeywords)) {
+            return false;
+        }
+        TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywords.get(0);
+        if (tweetSearchKeyword.getInitStatus() != 0) {
+            return false;
+        }
+        tweetSearchKeywordDao.update(TweetSearchKeyword
+                .builder()
+                .id(tweetSearchKeyword.getId())
+                .initStatus(1)
+                .modifyTime(new Date())
+                .build());
+        return true;
+    }
+
+    @Override
+    public boolean setRefreshDataFlag(String searchKey) {
+        if (StrUtil.isBlank(searchKey)) {
+            return false;
+        }
+        List<TweetSearchKeyword> tweetSearchKeywords = tweetSearchKeywordDao.queryTweetSearchKeywordsByKeyword(searchKey);
+        if (CollUtil.isEmpty(tweetSearchKeywords)) {
+            return false;
+        }
+        TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywords.get(0);
+        if (tweetSearchKeyword.getRefreshDataFlag() != 0) {
+            return false;
+        }
+        tweetSearchKeywordDao.update(TweetSearchKeyword
+                .builder()
+                .id(tweetSearchKeyword.getId())
+                .refreshDataFlag(1)
+                .modifyTime(new Date())
+                .build());
+        return true;
+    }
+
+    @Override
+    public void finishRefresh(String searchKey, Long size) {
+        if (ObjectUtil.isEmpty(searchKey) || ObjectUtil.isEmpty(size)) {
+            return;
+        }
+        List<TweetSearchKeyword> tweetSearchKeywords = tweetSearchKeywordDao.queryTweetSearchKeywordsByKeyword(searchKey);
+        if (CollUtil.isEmpty(tweetSearchKeywords)) {
+            return;
+        }
+        TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywords.get(0);
+        Integer initDataNumber = tweetSearchKeyword.getInitDataNumber();
+        if (ObjectUtil.isEmpty(initDataNumber)) {
+            initDataNumber = 0;
+        }
+        tweetSearchKeywordDao.update(TweetSearchKeyword
+                .builder()
+                .id(tweetSearchKeyword.getId())
+                .initDataNumber(size.intValue() + initDataNumber)
+                .refreshDataFlag(2)
+                .modifyTime(new Date())
+                .build());
     }
 }

@@ -7,25 +7,30 @@
         <result column="init_status" property="initStatus"/>
         <result column="init_data_number" property="initDataNumber"/>
         <result column="is_deleted" property="isDeleted"/>
+        <result column="refresh_data_flag" property="refreshDataFlag"/>
         <result column="create_time" property="createTime"/>
         <result column="modify_time" property="modifyTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
-        , keyword,init_status,init_data_number,is_deleted, create_time,modify_time
+        , keyword,init_status,init_data_number,is_deleted,refresh_data_flag, create_time,modify_time
     </sql>
 
     <insert id="insertTweetSearchKeyword" parameterType="com.daniel.ltc20.domain.TweetSearchKeyword">
-        INSERT INTO tweet_search_keyword (keyword, init_status,init_data_number,is_deleted, create_time,modify_time)
-        VALUES (#{keyword}, #{initStatus},#{initDataNumber},#{isDeleted}, #{createTime},#{modifyTime})
+        INSERT INTO tweet_search_keyword (keyword, init_status, init_data_number, is_deleted, refresh_data_flag,
+                                          create_time, modify_time)
+        VALUES (#{keyword}, #{initStatus}, #{initDataNumber}, #{isDeleted}, #{refreshDataFlag}, #{createTime},
+                #{modifyTime})
     </insert>
 
     <insert id="insertTweetSearchKeywords" parameterType="java.util.List">
-        INSERT INTO tweet_search_keyword (keyword,init_status,init_data_number,is_deleted, create_time,modify_time)
+        INSERT INTO tweet_search_keyword (keyword,init_status,init_data_number,is_deleted,refresh_data_flag,
+        create_time,modify_time)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            ( #{keyword},#{initStatus},#{initDataNumber},#{isDeleted}, #{item.createTime},#{modifyTime})
+            ( #{keyword},#{initStatus},#{initDataNumber},#{isDeleted}, #{refreshDataFlag},
+            #{item.createTime},#{modifyTime})
         </foreach>
     </insert>
 
@@ -49,4 +54,32 @@
         SET is_deleted = 1
         WHERE id = #{id}
     </update>
+
+    <update id="update">
+        UPDATE tweet_search_keyword
+        SET
+        <if test="keyword != null">
+            keyword = #{keyword},
+        </if>
+        <if test="initStatus != null">
+            init_status = #{initStatus},
+        </if>
+        <if test="initDataNumber != null">
+            init_data_number = #{initDataNumber},
+        </if>
+        <if test="isDeleted != null">
+            is_deleted = #{isDeleted},
+        </if>
+        <if test="refreshDataFlag != null">
+            refresh_data_flag = #{refreshDataFlag},
+        </if>
+        <if test="createTime != null">
+            create_time = #{createTime},
+        </if>
+        <if test="modifyTime != null">
+            modify_time = #{modifyTime}
+        </if>
+        WHERE id = #{id}
+    </update>
+
 </mapper>

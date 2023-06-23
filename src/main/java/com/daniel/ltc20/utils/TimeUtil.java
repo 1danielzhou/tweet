@@ -53,4 +53,30 @@ public class TimeUtil {
         }
         return new Date();
     }
+
+    public static boolean isWithin48Hours(Date date) {
+        try {
+            Date currentDate = new Date();
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(date);
+            calendar.add(Calendar.HOUR_OF_DAY, 48);
+            Date futureDate = calendar.getTime();
+            return currentDate.before(futureDate);
+        }catch (Exception e){
+            return false;
+        }
+    }
+
+    public static boolean isWithin30Days(Date date) {
+        try {
+            Date currentDate = new Date();
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(date);
+            calendar.add(Calendar.DAY_OF_MONTH, 30);
+            Date futureDate = calendar.getTime();
+            return currentDate.before(futureDate);
+        }catch (Exception e){
+            return false;
+        }
+    }
 }
