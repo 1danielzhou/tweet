@@ -3,14 +3,10 @@ package com.daniel.ltc20.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import com.daniel.ltc20.dao.TweetBaseContentDao;
-import com.daniel.ltc20.dao.TweetRelationMentionDao;
-import com.daniel.ltc20.dao.TweetRelationPostViewDao;
-import com.daniel.ltc20.dao.TweetRelationTopicDao;
 import com.daniel.ltc20.domain.TweetRelationPostView;
 import com.daniel.ltc20.model.TweetContent;
-import com.daniel.ltc20.service.TweetContentService;
-import com.daniel.ltc20.service.TweetLoginService;
+import com.daniel.ltc20.service.*;
+import com.daniel.ltc20.utils.CollectionUtil;
 import com.daniel.ltc20.utils.TimeUtil;
 import com.daniel.ltc20.utils.TweetUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -30,16 +26,16 @@ import java.util.regex.Pattern;
 @Service
 public class TweetContentServiceImpl implements TweetContentService {
     @Autowired
-    private TweetBaseContentDao tweetBaseContentDao;
+    private TweetBaseContentService tweetBaseContentService;
 
     @Autowired
-    private TweetRelationMentionDao tweetRelationMentionDao;
+    private TweetRelationMentionService tweetRelationMentionService;
 
     @Autowired
-    private TweetRelationPostViewDao tweetRelationPostViewDao;
+    private TweetRelationPostViewService tweetRelationPostViewService;
 
     @Autowired
-    private TweetRelationTopicDao tweetRelationTopicDao;
+    private TweetRelationTopicService tweetRelationTopicService;
 
     @Autowired
     private TweetLoginService tweetLoginService;
@@ -50,16 +46,16 @@ public class TweetContentServiceImpl implements TweetContentService {
             return;
         }
         if (ObjectUtil.isNotEmpty(tweetContent.getTweetBaseContent())) {
-            tweetBaseContentDao.insertTweetBaseContent(tweetContent.getTweetBaseContent());
+            tweetBaseContentService.insert(tweetContent.getTweetBaseContent());
         }
         if (CollUtil.isNotEmpty(tweetContent.getTweetMentions())) {
-            tweetRelationMentionDao.insertTweetRelationMentions(tweetContent.getTweetMentions());
+            tweetRelationMentionService.insert(tweetContent.getTweetMentions(), tweetContent.getTweetBaseContent().getTweetId());
         }
         if (CollUtil.isNotEmpty(tweetContent.getPostViews())) {
-            tweetRelationPostViewDao.insertTweetRelationPostViews(tweetContent.getPostViews());
+            tweetRelationPostViewService.insert(tweetContent.getPostViews(), tweetContent.getTweetBaseContent().getTweetId());
         }
         if (CollUtil.isNotEmpty(tweetContent.getTweetTopics())) {
-            tweetRelationTopicDao.insertTweetRelationTopics(tweetContent.getTweetTopics());
+            tweetRelationTopicService.insert(tweetContent.getTweetTopics(), tweetContent.getTweetBaseContent().getTweetId());
         }
         log.info("写入数据库成功，{}", tweetContent);
     }
@@ -133,7 +129,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             while (true) {
                 List<WebElement> cellInnerDivElements = browser.findElements(By.xpath("//section//div[@data-testid=\"cellInnerDiv\"]"));
                 if (CollUtil.isEmpty(cellInnerDivElements)) {
-                    continue;
+                    break;
                 }
                 for (WebElement cellInnerDivElement : cellInnerDivElements) {
                     String url = parsedTweetUrl(cellInnerDivElement);
@@ -163,7 +159,45 @@ public class TweetContentServiceImpl implements TweetContentService {
             }
         }
         log.info(StrUtil.format("搜索关键词{}，一共获取{}条url", searchKey, urls.size()));
-        return urls;
+        return CollectionUtil.removeDuplicates(urls);
+    }
+
+    @Override
+    public Long searchStorePass24HTweet(String searchKey) {
+        WebDriver webDriver = null;
+        List<String> urls = new ArrayList<>();
+        try {
+            urls = this.searchLatestTweetUrls(searchKey, 100000, true);
+            if (CollUtil.isEmpty(urls)) {
+                return 0L;
+            }
+            webDriver = tweetLoginService.loginWithRandomAccount();
+            for (int i = 0; i < urls.size(); i++) {
+                if (StrUtil.isBlank(urls.get(i))) {
+                    continue;
+                }
+                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, urls.get(i));
+                if (ObjectUtil.isEmpty(tweetContent)) {
+                    continue;
+                }
+                tweetContent.getTweetBaseContent().setSearchKey(searchKey);
+                tweetContent.getTweetBaseContent().setLabel("latest");
+                log.info("一共有{}条数据，目前收集到第{}条数据，收集到的数据为{}", urls.size(), i, tweetContent);
+                this.insertTweetContent(tweetContent);
+            }
+        } catch (Exception e) {
+            log.error("收集tweet信息的时候出错，{}", e);
+        } finally {
+            if (ObjectUtil.isNotEmpty(webDriver)) {
+                webDriver.quit();
+            }
+        }
+
+        if (CollUtil.isEmpty(urls)) {
+            return 0L;
+        } else {
+            return (long) urls.size();
+        }
     }
 
     private String parsedTweetUrl(WebElement cellInnerDivElement) {

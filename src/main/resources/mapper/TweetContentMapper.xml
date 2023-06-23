@@ -29,6 +29,13 @@
         FROM tweet_base_content
     </select>
 
+    <select id="queryTweetBaseContentByTweetId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM tweet_base_content
+        WHERE tweet_id = #{tweetId}
+    </select>
+
     <insert id="insertTweetBaseContent" parameterType="com.daniel.ltc20.domain.TweetBaseContent">
         INSERT INTO tweet_base_content (tweet_id, search_key, label, user_id, tweet_content, latest_view_number,
                                         tweet_url, screenshot_url, tweet_content_create_time,

@@ -2,8 +2,8 @@
 
     <property name="name" value="ltc20"/>
     <property name="log.name" value="${name}.log"/>
-    <property name="log.base" value="E:/logs"/>
-<!--    <property name="log.base" value="/build/logs"/>-->
+<!--    <property name="log.base" value="E:/logs"/>-->
+    <property name="log.base" value="/build/logs"/>
 
     <appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${log.base}/${log.name}</file>

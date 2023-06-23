@@ -9,5 +9,7 @@ import java.util.List;
 public interface TweetBaseContentDao {
     List<TweetBaseContent> getTweetBaseContentList();
 
+    TweetBaseContent queryTweetBaseContentByTweetId(String tweetId);
+
     void insertTweetBaseContent(TweetBaseContent tweetBaseContent);
 }
