@@ -164,10 +164,19 @@ public class TweetContentServiceImpl implements TweetContentService {
 
     @Override
     public Long searchStorePass24HTweet(String searchKey) {
+        return searchStoreTweet(searchKey,true);
+    }
+
+    @Override
+    public Long initTweetContentByNewKeyword(String searchKey) {
+        return searchStoreTweet(searchKey,false);
+    }
+
+    private Long searchStoreTweet(String searchKey, boolean searchPast24H) {
         WebDriver webDriver = null;
         List<String> urls = new ArrayList<>();
         try {
-            urls = this.searchLatestTweetUrls(searchKey, 100000, true);
+            urls = this.searchLatestTweetUrls(searchKey, 100000, searchPast24H);
             if (CollUtil.isEmpty(urls)) {
                 return 0L;
             }
@@ -192,7 +201,6 @@ public class TweetContentServiceImpl implements TweetContentService {
                 webDriver.quit();
             }
         }
-
         if (CollUtil.isEmpty(urls)) {
             return 0L;
         } else {

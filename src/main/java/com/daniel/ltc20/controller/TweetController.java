@@ -23,9 +23,11 @@ public class TweetController {
         return StrUtil.format("收集任务结束，关键词{}在过去24小时一共有{}条推文", searchKey, size);
     }
 
-    @RequestMapping(value = "/test2", method = RequestMethod.GET)
-    public String testLog2() {
-        log.info("12344");
-        return "1234";
+    @RequestMapping(value = "/collectData/init", method = RequestMethod.GET)
+    public String init(String searchKey) {
+        log.info("新增一个searchKey：{}，初始化历史数据", searchKey);
+        Long size = tweetContentService.initTweetContentByNewKeyword(searchKey);
+        log.info("初始化历史数据任务结束，关键词{}一共收集到{}条推文", searchKey, size);
+        return StrUtil.format("初始化历史数据任务结束，关键词{}一共收集到{}条推文", searchKey, size);
     }
 }

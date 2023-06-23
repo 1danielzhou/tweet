@@ -10,6 +10,8 @@ public interface TweetContentService {
 
     Long searchStorePass24HTweet(String searchKey);
 
+    Long initTweetContentByNewKeyword(String searchKey);
+
     void insertTweetContent(TweetContent tweetContent);
 
     TweetContent queryTweetContentByUrl(WebDriver browser, String tweetUrl);
