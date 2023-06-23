@@ -1,5 +1,7 @@
 package com.daniel.ltc20.utils;
 
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.daniel.ltc20.domain.TweetRelationMention;
 import com.daniel.ltc20.domain.TweetRelationTopic;
 import lombok.extern.slf4j.Slf4j;
@@ -130,7 +132,7 @@ public class TweetUtil {
     public static long formatNumber(String number) {
         if (number.matches("\\d+")) {
             return Long.parseLong(number);
-        } else if (number.endsWith("k")||number.endsWith("K")) {
+        } else if (number.endsWith("k") || number.endsWith("K")) {
             float value = Float.parseFloat(number.substring(0, number.length() - 1));
             return (long) (value * 1000);
         } else if (number.endsWith("M")) {
@@ -189,5 +191,28 @@ public class TweetUtil {
             log.error("获取topics失败，{}", e);
         }
         return tweetTopics;
+    }
+
+    public static boolean isWithinIntervalHour(WebElement cellInnerDivElement, int interval) {
+        if (ObjectUtil.isEmpty(cellInnerDivElement)) {
+            return false;
+        }
+        int RETRY_LIMIT = 3;
+        for (int i = 0; i < RETRY_LIMIT; i++) {
+            try {
+                WebElement tweetContentCreateTimeDiv = cellInnerDivElement.findElement(By.xpath(".//time"));
+                String utcDatetime = tweetContentCreateTimeDiv.getAttribute("datetime");
+                Date shanghaiDate = TimeUtil.convertToShanghaiTime(utcDatetime);
+                log.info(StrUtil.format("解析获取到的时间为：{}", shanghaiDate));
+                return TimeUtil.isWithinIntervalHours(shanghaiDate,interval);
+            } catch (Exception e) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    log.error("{}", e);
+                }
+            }
+        }
+        return true;
     }
 }

@@ -19,4 +19,6 @@ public interface TweetSearchKeywordService {
     boolean setRefreshDataFlag(String searchKey);
 
     void finishRefresh(String searchKey, Long size);
+
+    TweetSearchKeyword getRandomUnupdatedDataWithinInterval(int i);
 }

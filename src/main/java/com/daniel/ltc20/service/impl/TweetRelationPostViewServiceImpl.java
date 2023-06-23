@@ -22,7 +22,7 @@ public class TweetRelationPostViewServiceImpl implements TweetRelationPostViewSe
             return;
         }
         List<TweetRelationPostView> tweetRelationPostViews = tweetRelationPostViewDao.queryTweetRelationPostViewByTweetId(tweetId);
-        if (CollUtil.isEmpty(tweetRelationPostViews)) {
+        if (CollUtil.isNotEmpty(tweetRelationPostViews)) {
             return;
         }
         tweetRelationPostViewDao.insertTweetRelationPostViews(list);

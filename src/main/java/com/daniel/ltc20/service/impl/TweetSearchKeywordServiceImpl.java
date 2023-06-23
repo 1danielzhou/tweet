@@ -9,8 +9,13 @@ import com.daniel.ltc20.service.TweetSearchKeywordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 @Service
 public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService {
@@ -147,5 +152,48 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
                 .refreshDataFlag(2)
                 .modifyTime(new Date())
                 .build());
+    }
+
+    @Override
+    public TweetSearchKeyword getRandomUnupdatedDataWithinInterval(int interval) {
+        List<TweetSearchKeyword> tweetSearchKeywords = tweetSearchKeywordDao.queryTweetSearchKeywords();
+        if (CollUtil.isEmpty(tweetSearchKeywords)) {
+            return null;
+        }
+
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        List<TweetSearchKeyword> unupdatedKeywords = new ArrayList<>();
+
+        for (TweetSearchKeyword keyword : tweetSearchKeywords) {
+            try {
+                LocalDateTime modifyDateTime = keyword.getLastUrlUpdateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                Duration duration = Duration.between(modifyDateTime, currentDateTime);
+                long secondsElapsed = duration.getSeconds();
+
+                if (secondsElapsed > interval * 3600) { // 将interval转换为秒
+                    unupdatedKeywords.add(keyword);
+                }
+            }catch (Exception e){
+                unupdatedKeywords.add(keyword);
+            }
+        }
+
+        if (CollUtil.isEmpty(unupdatedKeywords)) {
+            return null;
+        }
+
+        Random random = new Random();
+        int randomIndex = random.nextInt(unupdatedKeywords.size());
+        TweetSearchKeyword tweetSearchKeyword = unupdatedKeywords.get(randomIndex);
+
+        tweetSearchKeywordDao.update(
+                TweetSearchKeyword
+                        .builder()
+                        .id(tweetSearchKeyword.getId())
+                        .lastUrlUpdateTime(new Date())
+                        .modifyTime(new Date())
+                        .build()
+        );
+        return tweetSearchKeyword;
     }
 }

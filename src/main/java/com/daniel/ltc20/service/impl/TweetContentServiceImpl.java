@@ -109,7 +109,7 @@ public class TweetContentServiceImpl implements TweetContentService {
     }
 
     @Override
-    public List<String> searchLatestTweetUrls(String searchKey, int size, boolean searchPast24H) {
+    public List<String> searchLatestTweetUrls(String searchKey, int size, int interval) {
         if (StrUtil.isEmpty(searchKey)) {
             log.error("searchKey不允许为空！！！");
             return new ArrayList<>();
@@ -132,7 +132,6 @@ public class TweetContentServiceImpl implements TweetContentService {
             long prevScrollHeight = 0;
             long currScrollHeight = (long) jsExecutor.executeScript("return document.body.scrollHeight;");
 
-
             while (true) {
                 List<WebElement> cellInnerDivElements = browser.findElements(By.xpath("//section//div[@data-testid=\"cellInnerDiv\"]"));
                 if (CollUtil.isEmpty(cellInnerDivElements)) {
@@ -145,11 +144,7 @@ public class TweetContentServiceImpl implements TweetContentService {
                         log.info(StrUtil.format("解析获取到的url为{}", url));
                         urls.add(url);
                     }
-                    if (searchPast24H && !isWithinPast48H(cellInnerDivElement)) {
-                        count = size;
-                        break;
-                    }
-                    if (!isWithinPast30Days(cellInnerDivElement)) {
+                    if (!TweetUtil.isWithinIntervalHour(cellInnerDivElement,interval)) {
                         count = size;
                         break;
                     }
@@ -192,7 +187,7 @@ public class TweetContentServiceImpl implements TweetContentService {
         WebDriver webDriver = null;
         List<String> urls = new ArrayList<>();
         try {
-            urls = this.searchLatestTweetUrls(searchKey, 100000, searchPast24H);
+            urls = this.getLatestTweetUrls();
             if (CollUtil.isEmpty(urls)) {
                 return 0L;
             }
@@ -224,6 +219,10 @@ public class TweetContentServiceImpl implements TweetContentService {
         }
     }
 
+    private List<String> getLatestTweetUrls() {
+        return null;
+    }
+
     private String parsedTweetUrl(WebElement cellInnerDivElement) {
         if (ObjectUtil.isEmpty(cellInnerDivElement)) {
             return "";
@@ -237,51 +236,5 @@ public class TweetContentServiceImpl implements TweetContentService {
             log.error(StrUtil.format("解析获取URL时出错"));
         }
         return "";
-    }
-
-    private boolean isWithinPast48H(WebElement cellInnerDivElement) {
-        if (ObjectUtil.isEmpty(cellInnerDivElement)) {
-            return false;
-        }
-        int RETRY_LIMIT = 3;
-        for (int i = 0; i < RETRY_LIMIT; i++) {
-            try {
-                WebElement tweetContentCreateTimeDiv = cellInnerDivElement.findElement(By.xpath(".//time"));
-                String utcDatetime = tweetContentCreateTimeDiv.getAttribute("datetime");
-                Date shanghaiDate = TimeUtil.convertToShanghaiTime(utcDatetime);
-                log.info(StrUtil.format("解析获取到的时间为：{}", shanghaiDate));
-                return TimeUtil.isWithin48Hours(shanghaiDate);
-            } catch (Exception e) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                    log.error("{}", e);
-                }
-            }
-        }
-        return true;
-    }
-
-    private boolean isWithinPast30Days(WebElement cellInnerDivElement) {
-        if (ObjectUtil.isEmpty(cellInnerDivElement)) {
-            return false;
-        }
-        int RETRY_LIMIT = 3;
-        for (int i = 0; i < RETRY_LIMIT; i++) {
-            try {
-                WebElement tweetContentCreateTimeDiv = cellInnerDivElement.findElement(By.xpath(".//time"));
-                String utcDatetime = tweetContentCreateTimeDiv.getAttribute("datetime");
-                Date shanghaiDate = TimeUtil.convertToShanghaiTime(utcDatetime);
-                log.info(StrUtil.format("解析获取到的时间为：{}", shanghaiDate));
-                return TimeUtil.isWithin30Days(shanghaiDate);
-            } catch (Exception e) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                    log.error("{}", e);
-                }
-            }
-        }
-        return true;
     }
 }

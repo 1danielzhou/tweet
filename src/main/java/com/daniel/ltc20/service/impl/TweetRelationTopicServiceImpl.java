@@ -22,7 +22,7 @@ public class TweetRelationTopicServiceImpl implements TweetRelationTopicService 
             return;
         }
         List<TweetRelationTopic> tweetRelationTopics = tweetRelationTopicDao.queryTweetRelationTopicByTweetId(tweetId);
-        if (CollUtil.isEmpty(tweetRelationTopics)) {
+        if (CollUtil.isNotEmpty(tweetRelationTopics)) {
             return;
         }
         tweetRelationTopicDao.insertTweetRelationTopics(list);
