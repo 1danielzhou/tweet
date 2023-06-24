@@ -1,11 +1,13 @@
 package com.daniel.ltc20.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.daniel.ltc20.dao.TweetSearchKeywordDao;
 import com.daniel.ltc20.domain.TweetSearchKeyword;
 import com.daniel.ltc20.service.TweetSearchKeywordService;
+import com.daniel.ltc20.utils.TimeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -173,7 +175,7 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
                 if (secondsElapsed > interval * 3600) { // 将interval转换为秒
                     unupdatedKeywords.add(keyword);
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 unupdatedKeywords.add(keyword);
             }
         }
@@ -200,5 +202,43 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
     @Override
     public void update(TweetSearchKeyword tweetSearchKeyword) {
         tweetSearchKeywordDao.update(tweetSearchKeyword);
+    }
+
+    @Override
+    public TweetSearchKeyword getLastCollectedRandomDataFromYesterday() {
+        List<TweetSearchKeyword> tweetSearchKeywords = tweetSearchKeywordDao.queryTweetSearchKeywords();
+        if (CollUtil.isEmpty(tweetSearchKeywords)) {
+            return null;
+        }
+
+        Pair<Date, Date> yesterdayTimeRange = TimeUtil.getYesterdayTimeRange();
+        List<TweetSearchKeyword> unupdatedKeywords = new ArrayList<>();
+        for (TweetSearchKeyword keyword : tweetSearchKeywords) {
+            try {
+                if (keyword.getLastCollectDataTime().after(yesterdayTimeRange.getKey()) && keyword.getLastCollectDataTime().before(yesterdayTimeRange.getValue())) { // 将interval转换为秒
+                    unupdatedKeywords.add(keyword);
+                }
+            } catch (Exception e) {
+                unupdatedKeywords.add(keyword);
+            }
+        }
+
+        if (CollUtil.isEmpty(unupdatedKeywords)) {
+            return null;
+        }
+
+        Random random = new Random();
+        int randomIndex = random.nextInt(unupdatedKeywords.size());
+        TweetSearchKeyword tweetSearchKeyword = unupdatedKeywords.get(randomIndex);
+
+        tweetSearchKeywordDao.update(
+                TweetSearchKeyword
+                        .builder()
+                        .id(tweetSearchKeyword.getId())
+                        .lastCollectDataTime(new Date())
+                        .modifyTime(new Date())
+                        .build()
+        );
+        return tweetSearchKeyword;
     }
 }

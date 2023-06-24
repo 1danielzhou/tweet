@@ -1,10 +1,10 @@
 package com.daniel.ltc20.utils;
 
+import cn.hutool.core.lang.Pair;
 import lombok.extern.slf4j.Slf4j;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -65,5 +65,25 @@ public class TimeUtil {
         }catch (Exception e){
             return false;
         }
+    }
+
+    public static Pair<Date, Date> getYesterdayTimeRange() {
+        // 获取当前北京时间
+        ZoneId zoneId = ZoneId.of("Asia/Shanghai");
+        ZonedDateTime now = ZonedDateTime.now(zoneId);
+
+        // 获取昨天的开始时间和结束时间
+        LocalDate yesterday = now.toLocalDate().minusDays(1);
+        LocalDateTime yesterdayStart = yesterday.atStartOfDay();
+        LocalDateTime yesterdayEnd = yesterday.atTime(LocalTime.MAX);
+
+        // 转换为Date类型
+        Instant startInstant = yesterdayStart.atZone(zoneId).toInstant();
+        Instant endInstant = yesterdayEnd.atZone(zoneId).toInstant();
+        Date startDate = Date.from(startInstant);
+        Date endDate = Date.from(endInstant);
+
+        // 返回时间范围
+        return Pair.of(startDate, endDate);
     }
 }

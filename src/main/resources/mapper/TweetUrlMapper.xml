@@ -35,4 +35,10 @@
         WHERE tweet_id = #{tweetId}
     </select>
 
+    <select id="queryTweetUrlsByTimeRange" resultMap="BaseResultMap" parameterType="java.util.Map">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM tweet_url
+        WHERE keyword = #{searchKey} and tweet_create_time BETWEEN #{from} AND #{to}
+    </select>
 </mapper>

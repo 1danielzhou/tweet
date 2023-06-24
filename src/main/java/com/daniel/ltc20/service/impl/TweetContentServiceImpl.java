@@ -1,6 +1,7 @@
 package com.daniel.ltc20.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.daniel.ltc20.domain.TweetRelationPostView;
@@ -39,6 +40,9 @@ public class TweetContentServiceImpl implements TweetContentService {
 
     @Autowired
     private TweetLoginService tweetLoginService;
+
+    @Autowired
+    private TweetUrlService tweetUrlService;
 
     @Override
     public void insertTweetContent(TweetContent tweetContent) {
@@ -139,7 +143,7 @@ public class TweetContentServiceImpl implements TweetContentService {
                     break;
                 }
                 for (WebElement cellInnerDivElement : cellInnerDivElements) {
-                    String url = parsedTweetUrl(cellInnerDivElement);
+                    String url = TweetUtil.parsedTweetUrl(cellInnerDivElement);
                     Date tweetCreateTime = TweetUtil.getTweetCreateTime(cellInnerDivElement);
                     if (StrUtil.isNotBlank(url) && ObjectUtil.isNotEmpty(tweetCreateTime)) {
                         count++;
@@ -183,24 +187,21 @@ public class TweetContentServiceImpl implements TweetContentService {
     }
 
     @Override
-    public Long searchStorePass24HTweet(String searchKey) {
-        return searchStoreTweet(searchKey, true);
+    public boolean searchStoreYesterdayTweet(String searchKey) {
+        List<String> yesterdayTweetUrls = getYesterdayTweetUrls(searchKey);
+        return searchStoreTweet(searchKey, yesterdayTweetUrls);
     }
 
-    @Override
-    public Long initTweetContentByNewKeyword(String searchKey) {
-        return searchStoreTweet(searchKey, false);
-    }
-
-    private Long searchStoreTweet(String searchKey, boolean searchPast24H) {
+    private boolean searchStoreTweet(String searchKey, List<String> urls) {
+        if (CollUtil.isEmpty(urls)) {
+            return true;
+        }
         WebDriver webDriver = null;
-        List<String> urls = new ArrayList<>();
         try {
-            urls = this.getLatestTweetUrls();
-            if (CollUtil.isEmpty(urls)) {
-                return 0L;
-            }
             webDriver = tweetLoginService.loginWithRandomAccount();
+            if(ObjectUtil.isEmpty(webDriver)){
+                return false;
+            }
             for (int i = 0; i < urls.size(); i++) {
                 if (StrUtil.isBlank(urls.get(i))) {
                     continue;
@@ -221,29 +222,19 @@ public class TweetContentServiceImpl implements TweetContentService {
                 webDriver.quit();
             }
         }
-        if (CollUtil.isEmpty(urls)) {
-            return 0L;
-        } else {
-            return (long) urls.size();
-        }
+        return true;
     }
 
-    private List<String> getLatestTweetUrls() {
-        return null;
-    }
-
-    private String parsedTweetUrl(WebElement cellInnerDivElement) {
-        if (ObjectUtil.isEmpty(cellInnerDivElement)) {
-            return "";
+    private List<String> getYesterdayTweetUrls(String searchKey) {
+        Pair<Date, Date> yesterdayTimeRange = TimeUtil.getYesterdayTimeRange();
+        List<TweetUrl> tweetUrls = tweetUrlService.getTweetUrlsByTimeRange(searchKey,yesterdayTimeRange.getKey(), yesterdayTimeRange.getValue());
+        List<String> urls = new ArrayList<>();
+        if (CollUtil.isEmpty(tweetUrls)) {
+            return urls;
         }
-        try {
-            WebElement element = cellInnerDivElement.findElement(By.xpath(".//a[@class=\"css-4rbku5 css-18t94o4 css-1dbjc4n r-1loqt21 r-1777fci r-bt1l66 r-1ny4l3l r-bztko3 r-lrvibr\"]"));
-            if (ObjectUtil.isNotEmpty(element) && StrUtil.isNotBlank(element.getAttribute("href"))) {
-                return element.getAttribute("href").replace("/analytics", "");
-            }
-        } catch (Exception e) {
-            log.error(StrUtil.format("解析获取URL时出错"));
+        for (TweetUrl tweetUrl : tweetUrls) {
+            urls.add(tweetUrl.getTweetUrl());
         }
-        return "";
+        return urls;
     }
 }

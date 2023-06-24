@@ -29,22 +29,43 @@ public class TweetContentJob {
     private TweetUrlService tweetUrlService;
 
     @Scheduled(cron = "0 0/1 * * * ?") // 每小时执行一次
-    public void executeHourlyTask() {
+    public void getTweetUrl() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getRandomUnupdatedDataWithinInterval(INTERVAL);
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
             log.info("关键词{}的Urls在{}小时内未更新，下面尝试进行更新操作,{}", tweetSearchKeyword.getKeyword(), INTERVAL, tweetSearchKeyword);
             List<TweetUrl> tweetUrls = tweetContentService.searchLatestTweetUrls(tweetSearchKeyword.getKeyword(), 5000, 100);
             if (CollUtil.isEmpty(tweetUrls)) {
-                log.info("获取Url失败或者获取为空，将lastUrlUpdateTime还原回：{},以便再次获取",tweetSearchKeyword.getLastUrlUpdateTime());
+                log.info("获取Url失败或者获取为空，将lastUrlUpdateTime还原回：{},以便再次获取", tweetSearchKeyword.getLastUrlUpdateTime());
                 tweetSearchKeywordService.update(TweetSearchKeyword.builder()
                         .id(tweetSearchKeyword.getId())
                         .lastUrlUpdateTime(tweetSearchKeyword.getLastUrlUpdateTime())
                         .modifyTime(new Date())
                         .build());
-            }else{
+            } else {
                 log.info("一共获取到{}个链接，将其插入数据库中", tweetUrls.size());
                 tweetUrlService.insertTweetUrls(tweetUrls);
             }
+        } else {
+            log.info("没有查询到在过去{}小时未更新的关键词", INTERVAL);
+        }
+    }
+
+    @Scheduled(cron = "0 0/1 * * * ?") // 每小时执行一次
+    public void searchStoreYesterdayTweet() {
+        TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getLastCollectedRandomDataFromYesterday();
+        if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
+            log.info("关键词{}的Urls在24小时内未收集最新的Tweet，下面尝试进行收集,{}", tweetSearchKeyword.getKeyword(), tweetSearchKeyword);
+            boolean result = tweetContentService.searchStoreYesterdayTweet(tweetSearchKeyword.getKeyword());
+            if (!result) {
+                log.info("关键词{}收集昨天的Tweet失败，将last_collect_data_time还原回：{},以便再次获取", tweetSearchKeyword.getKeyword(), tweetSearchKeyword.getLastCollectDataTime());
+                tweetSearchKeywordService.update(TweetSearchKeyword.builder()
+                        .id(tweetSearchKeyword.getId())
+                        .lastCollectDataTime(tweetSearchKeyword.getLastCollectDataTime())
+                        .modifyTime(new Date())
+                        .build());
+            }
+        } else {
+            log.info("没有查询到在过去{}小时未更新的关键词", INTERVAL);
         }
     }
 }

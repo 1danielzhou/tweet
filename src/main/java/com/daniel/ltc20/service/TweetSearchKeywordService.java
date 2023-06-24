@@ -23,4 +23,6 @@ public interface TweetSearchKeywordService {
     TweetSearchKeyword getRandomUnupdatedDataWithinInterval(int i);
 
     void update(TweetSearchKeyword build);
+
+    TweetSearchKeyword getLastCollectedRandomDataFromYesterday();
 }

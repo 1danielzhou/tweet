@@ -238,4 +238,19 @@ public class TweetUtil {
         }
         return null;
     }
+
+    public static String parsedTweetUrl(WebElement cellInnerDivElement) {
+        if (ObjectUtil.isEmpty(cellInnerDivElement)) {
+            return "";
+        }
+        try {
+            WebElement element = cellInnerDivElement.findElement(By.xpath(".//a[@class=\"css-4rbku5 css-18t94o4 css-1dbjc4n r-1loqt21 r-1777fci r-bt1l66 r-1ny4l3l r-bztko3 r-lrvibr\"]"));
+            if (ObjectUtil.isNotEmpty(element) && StrUtil.isNotBlank(element.getAttribute("href"))) {
+                return element.getAttribute("href").replace("/analytics", "");
+            }
+        } catch (Exception e) {
+            log.error(StrUtil.format("解析获取URL时出错"));
+        }
+        return "";
+    }
 }
