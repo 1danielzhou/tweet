@@ -7,11 +7,12 @@
         <result column="collect_date" property="collectDate"/>
         <result column="view_number" property="viewNumber"/>
         <result column="create_time" property="createTime"/>
+        <result column="modify_time" property="modifyTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
-        , tweet_id, collect_date,view_number, create_time
+        , tweet_id, collect_date,view_number, create_time,modify_time
     </sql>
 
     <select id="queryTweetRelationPostViewByTweetId" resultMap="BaseResultMap">
@@ -22,16 +23,28 @@
     </select>
 
     <insert id="insertTweetRelationPostView" parameterType="com.daniel.ltc20.domain.TweetRelationPostView">
-        INSERT INTO tweet_r_post_view (tweet_id, collect_date, view_number, create_time)
-        VALUES (#{tweetRelationPostView.tweetId}, #{tweetRelationPostView.collectDate},
-                #{tweetRelationPostView.viewNumber}, #{tweetRelationPostView.createTime})
+        INSERT INTO tweet_r_post_view (tweet_id, collect_date, view_number, create_time,modify_time)
+        VALUES (#{tweetId}, #{collectDate}, #{viewNumber}, #{createTime}, #{modifyTime})
     </insert>
 
     <insert id="insertTweetRelationPostViews" parameterType="java.util.List">
-        INSERT INTO tweet_r_post_view (tweet_id, collect_date, view_number, create_time)
+        INSERT INTO tweet_r_post_view (tweet_id, collect_date, view_number, create_time,modify_time)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.tweetId}, #{item.collectDate}, #{item.viewNumber}, #{item.createTime})
+            (#{item.tweetId}, #{item.collectDate}, #{item.viewNumber}, #{item.createTime}, #{item.modifyTime})
         </foreach>
     </insert>
+
+    <update id="update" parameterType="com.daniel.ltc20.domain.TweetRelationPostView">
+        UPDATE tweet_r_post_view
+        <set>
+            <if test="tweetId != null">tweet_id = #{tweetId},</if>
+            <if test="collectDate != null">collect_date = #{collectDate},</if>
+            <if test="viewNumber != null">view_number = #{viewNumber},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="modifyTime != null">modify_time = #{modifyTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
 </mapper>

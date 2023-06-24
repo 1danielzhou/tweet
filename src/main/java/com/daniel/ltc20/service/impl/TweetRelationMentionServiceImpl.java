@@ -16,7 +16,7 @@ public class TweetRelationMentionServiceImpl implements TweetRelationMentionServ
     private TweetRelationMentionDao tweetRelationMentionDao;
 
     @Override
-    public void insert(List<TweetRelationMention> list, String tweetId) {
+    public void insertOrUpdate(List<TweetRelationMention> list, String tweetId) {
         if (CollUtil.isEmpty(list) || StrUtil.isBlank(tweetId)) {
             return;
         }

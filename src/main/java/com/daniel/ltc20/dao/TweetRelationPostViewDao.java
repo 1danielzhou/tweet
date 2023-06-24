@@ -12,4 +12,6 @@ public interface TweetRelationPostViewDao {
     void insertTweetRelationPostView(TweetRelationPostView tweetRelationPostView);
 
     void insertTweetRelationPostViews(List<TweetRelationPostView> list);
+
+    void update(TweetRelationPostView tweetRelationPostView);
 }

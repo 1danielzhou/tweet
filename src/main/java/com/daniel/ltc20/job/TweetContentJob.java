@@ -50,7 +50,7 @@ public class TweetContentJob {
         }
     }
 
-    @Scheduled(cron = "0 0/1 * * * ?") // 每小时执行一次
+    @Scheduled(cron = "0 0/1 * * * ?")
     public void searchStoreYesterdayTweet() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getLastCollectedRandomDataFromYesterday();
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
@@ -65,7 +65,26 @@ public class TweetContentJob {
                         .build());
             }
         } else {
-            log.info("没有查询到在过去{}小时未更新的关键词", INTERVAL);
+            log.info("没有查询到在过去{}小时未更新前一天数据的关键词", 24);
+        }
+    }
+
+    @Scheduled(cron = "0 0/1 * * * ?") // 每小时执行一次
+    public void refreshHistoricalTweet() {
+        TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getLastRefreshHistoricalDataFromYesterday();
+        if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
+            log.info("关键词{}的还未更新过去7天的历史数据，下面尝试进行收集,{}", tweetSearchKeyword.getKeyword(), tweetSearchKeyword);
+            boolean result = tweetContentService.refreshPast7DaysTweet(tweetSearchKeyword.getKeyword());
+            if (!result) {
+                log.info("关键词{}更新过去7天的Tweet失败，将last_refresh_historical_data_time还原回：{},以便再次获取", tweetSearchKeyword.getKeyword(), tweetSearchKeyword.getLastRefreshHistoricalDataTime());
+                tweetSearchKeywordService.update(TweetSearchKeyword.builder()
+                        .id(tweetSearchKeyword.getId())
+                        .lastRefreshHistoricalDataTime(tweetSearchKeyword.getLastCollectDataTime())
+                        .modifyTime(new Date())
+                        .build());
+            }
+        } else {
+            log.info("没有查询到在过去{}小时未更新过去7天历史数据的关键词", 24);
         }
     }
 }

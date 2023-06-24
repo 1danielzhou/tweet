@@ -17,7 +17,7 @@ public class TweetRelationTopicServiceImpl implements TweetRelationTopicService 
 
 
     @Override
-    public void insert(List<TweetRelationTopic> list, String tweetId) {
+    public void insertOrUpdate(List<TweetRelationTopic> list, String tweetId) {
         if (CollUtil.isEmpty(list) || StrUtil.isBlank(tweetId)) {
             return;
         }

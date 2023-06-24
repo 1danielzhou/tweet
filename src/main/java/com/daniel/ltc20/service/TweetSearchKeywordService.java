@@ -25,4 +25,6 @@ public interface TweetSearchKeywordService {
     void update(TweetSearchKeyword build);
 
     TweetSearchKeyword getLastCollectedRandomDataFromYesterday();
+
+    TweetSearchKeyword getLastRefreshHistoricalDataFromYesterday();
 }

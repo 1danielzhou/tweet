@@ -5,5 +5,5 @@ import com.daniel.ltc20.domain.TweetRelationMention;
 import java.util.List;
 
 public interface TweetRelationMentionService {
-    void insert(List<TweetRelationMention> list,String tweetId);
+    void insertOrUpdate(List<TweetRelationMention> list, String tweetId);
 }

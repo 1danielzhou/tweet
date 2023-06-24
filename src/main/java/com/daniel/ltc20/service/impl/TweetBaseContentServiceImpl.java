@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 @Slf4j
 @Service
 public class TweetBaseContentServiceImpl implements TweetBaseContentService {
@@ -16,16 +18,22 @@ public class TweetBaseContentServiceImpl implements TweetBaseContentService {
     private TweetBaseContentDao tweetBaseContentDao;
 
     @Override
-    public void insert(TweetBaseContent tweetBaseContent) {
+    public void insertOrUpdate(TweetBaseContent tweetBaseContent) {
         if (ObjectUtil.isEmpty(tweetBaseContent) || StrUtil.isBlank(tweetBaseContent.getTweetId())) {
             return;
         }
         try {
             TweetBaseContent tweet = tweetBaseContentDao.queryTweetBaseContentByTweetId(tweetBaseContent.getTweetId());
             if (ObjectUtil.isNotEmpty(tweet)) {
-                return;
+                tweetBaseContentDao.update(TweetBaseContent
+                        .builder()
+                        .id(tweet.getId())
+                        .latestViewNumber(tweetBaseContent.getLatestViewNumber())
+                        .modifyTime(new Date())
+                        .build());
+            } else {
+                tweetBaseContentDao.insertTweetBaseContent(tweetBaseContent);
             }
-            tweetBaseContentDao.insertTweetBaseContent(tweetBaseContent);
         } catch (Exception e) {
             log.error("插入数据失败，{}", tweetBaseContent);
         }

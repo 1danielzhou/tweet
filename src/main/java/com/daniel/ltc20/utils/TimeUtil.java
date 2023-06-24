@@ -62,7 +62,7 @@ public class TimeUtil {
             calendar.add(Calendar.HOUR_OF_DAY, interval);
             Date futureDate = calendar.getTime();
             return currentDate.before(futureDate);
-        }catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
     }
@@ -85,5 +85,38 @@ public class TimeUtil {
 
         // 返回时间范围
         return Pair.of(startDate, endDate);
+    }
+
+    public static Pair<Date, Date> getSevenDaysAgoToYesterdayTimeRange() {
+        // 获取当前北京时间
+        ZoneId zoneId = ZoneId.of("Asia/Shanghai");
+        ZonedDateTime now = ZonedDateTime.now(zoneId);
+
+        // 获取昨天的开始时间和结束时间
+        LocalDate yesterday = now.toLocalDate().minusDays(1);
+        LocalDateTime yesterdayStart = yesterday.atStartOfDay();
+
+        // 获取7天前的开始时间
+        LocalDate sevenDaysAgo = yesterday.minusDays(7);
+        LocalDateTime sevenDaysAgoStart = sevenDaysAgo.atStartOfDay();
+
+        // 转换为Date类型
+        Instant yesterdayStartInstant = yesterdayStart.atZone(zoneId).toInstant();
+        Instant sevenDaysAgoStartInstant = sevenDaysAgoStart.atZone(zoneId).toInstant();
+        Date yesterdayStartDate = Date.from(yesterdayStartInstant);
+        Date sevenDaysAgoStartDate = Date.from(sevenDaysAgoStartInstant);
+
+        // 返回时间范围
+        return Pair.of(sevenDaysAgoStartDate, yesterdayStartDate);
+    }
+
+    public static Date extractDate(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0); // 将时间部分设为零时
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
     }
 }

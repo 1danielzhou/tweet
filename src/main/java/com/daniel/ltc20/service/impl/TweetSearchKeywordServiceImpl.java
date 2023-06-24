@@ -235,7 +235,45 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
                 TweetSearchKeyword
                         .builder()
                         .id(tweetSearchKeyword.getId())
-                        .lastCollectDataTime(new Date())
+                        .lastCollectDataTime(TimeUtil.extractDate(new Date()))
+                        .modifyTime(new Date())
+                        .build()
+        );
+        return tweetSearchKeyword;
+    }
+
+    @Override
+    public TweetSearchKeyword getLastRefreshHistoricalDataFromYesterday() {
+        List<TweetSearchKeyword> tweetSearchKeywords = tweetSearchKeywordDao.queryTweetSearchKeywords();
+        if (CollUtil.isEmpty(tweetSearchKeywords)) {
+            return null;
+        }
+
+        Pair<Date, Date> yesterdayTimeRange = TimeUtil.getYesterdayTimeRange();
+        List<TweetSearchKeyword> unupdatedKeywords = new ArrayList<>();
+        for (TweetSearchKeyword keyword : tweetSearchKeywords) {
+            try {
+                if (keyword.getLastRefreshHistoricalDataTime().after(yesterdayTimeRange.getKey()) && keyword.getLastRefreshHistoricalDataTime().before(yesterdayTimeRange.getValue())) { // 将interval转换为秒
+                    unupdatedKeywords.add(keyword);
+                }
+            } catch (Exception e) {
+                unupdatedKeywords.add(keyword);
+            }
+        }
+
+        if (CollUtil.isEmpty(unupdatedKeywords)) {
+            return null;
+        }
+
+        Random random = new Random();
+        int randomIndex = random.nextInt(unupdatedKeywords.size());
+        TweetSearchKeyword tweetSearchKeyword = unupdatedKeywords.get(randomIndex);
+
+        tweetSearchKeywordDao.update(
+                TweetSearchKeyword
+                        .builder()
+                        .id(tweetSearchKeyword.getId())
+                        .lastRefreshHistoricalDataTime(TimeUtil.extractDate(new Date()))
                         .modifyTime(new Date())
                         .build()
         );

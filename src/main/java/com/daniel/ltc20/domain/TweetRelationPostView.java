@@ -17,4 +17,5 @@ public class TweetRelationPostView {
     private Date collectDate;
     private Long viewNumber;
     private Date createTime;
+    private Date modifyTime;
 }

@@ -16,4 +16,6 @@ public interface TweetContentService {
     TweetContent queryTweetContentByUrl(WebDriver browser, String tweetUrl);
 
     List<TweetUrl> searchLatestTweetUrls(String searchKey, int size, int interval);
+
+    boolean refreshPast7DaysTweet(String keyword);
 }

@@ -50,16 +50,16 @@ public class TweetContentServiceImpl implements TweetContentService {
             return;
         }
         if (ObjectUtil.isNotEmpty(tweetContent.getTweetBaseContent())) {
-            tweetBaseContentService.insert(tweetContent.getTweetBaseContent());
+            tweetBaseContentService.insertOrUpdate(tweetContent.getTweetBaseContent());
         }
         if (CollUtil.isNotEmpty(tweetContent.getTweetMentions())) {
-            tweetRelationMentionService.insert(tweetContent.getTweetMentions(), tweetContent.getTweetBaseContent().getTweetId());
+            tweetRelationMentionService.insertOrUpdate(tweetContent.getTweetMentions(), tweetContent.getTweetBaseContent().getTweetId());
         }
         if (CollUtil.isNotEmpty(tweetContent.getPostViews())) {
-            tweetRelationPostViewService.insert(tweetContent.getPostViews(), tweetContent.getTweetBaseContent().getTweetId());
+            tweetRelationPostViewService.insertOrUpdate(tweetContent.getPostViews(), tweetContent.getTweetBaseContent().getTweetId());
         }
         if (CollUtil.isNotEmpty(tweetContent.getTweetTopics())) {
-            tweetRelationTopicService.insert(tweetContent.getTweetTopics(), tweetContent.getTweetBaseContent().getTweetId());
+            tweetRelationTopicService.insertOrUpdate(tweetContent.getTweetTopics(), tweetContent.getTweetBaseContent().getTweetId());
         }
         log.info("写入数据库成功，{}", tweetContent);
     }
@@ -223,6 +223,25 @@ public class TweetContentServiceImpl implements TweetContentService {
             }
         }
         return true;
+    }
+
+    @Override
+    public boolean refreshPast7DaysTweet(String keyword) {
+        List<String> yesterdayTweetUrls = getPast7daysTweetUrls(keyword);
+        return searchStoreTweet(keyword, yesterdayTweetUrls);
+    }
+
+    private List<String> getPast7daysTweetUrls(String keyword) {
+        Pair<Date, Date> sevenDaysAgoToYesterdayTimeRange = TimeUtil.getSevenDaysAgoToYesterdayTimeRange();
+        List<TweetUrl> tweetUrls = tweetUrlService.getTweetUrlsByTimeRange(keyword,sevenDaysAgoToYesterdayTimeRange.getKey(), sevenDaysAgoToYesterdayTimeRange.getValue());
+        List<String> urls = new ArrayList<>();
+        if (CollUtil.isEmpty(tweetUrls)) {
+            return urls;
+        }
+        for (TweetUrl tweetUrl : tweetUrls) {
+            urls.add(tweetUrl.getTweetUrl());
+        }
+        return urls;
     }
 
     private List<String> getYesterdayTweetUrls(String searchKey) {

@@ -12,4 +12,6 @@ public interface TweetBaseContentDao {
     TweetBaseContent queryTweetBaseContentByTweetId(String tweetId);
 
     void insertTweetBaseContent(TweetBaseContent tweetBaseContent);
+
+    void update(TweetBaseContent build);
 }
