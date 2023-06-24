@@ -1,5 +1,6 @@
 package com.daniel.ltc20.service;
 
+import com.daniel.ltc20.domain.TweetUrl;
 import com.daniel.ltc20.model.TweetContent;
 import org.openqa.selenium.WebDriver;
 
@@ -16,5 +17,5 @@ public interface TweetContentService {
 
     TweetContent queryTweetContentByUrl(WebDriver browser, String tweetUrl);
 
-    List<String> searchLatestTweetUrls(String searchKey, int size, int interval);
+    List<TweetUrl> searchLatestTweetUrls(String searchKey, int size, int interval);
 }

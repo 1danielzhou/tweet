@@ -215,4 +215,27 @@ public class TweetUtil {
         }
         return true;
     }
+
+    public static Date getTweetCreateTime(WebElement cellInnerDivElement) {
+        if (ObjectUtil.isEmpty(cellInnerDivElement)) {
+            return null;
+        }
+        int RETRY_LIMIT = 3;
+        for (int i = 0; i < RETRY_LIMIT; i++) {
+            try {
+                WebElement tweetContentCreateTimeDiv = cellInnerDivElement.findElement(By.xpath(".//time"));
+                String utcDatetime = tweetContentCreateTimeDiv.getAttribute("datetime");
+                Date shanghaiDate = TimeUtil.convertToShanghaiTime(utcDatetime);
+                log.info(StrUtil.format("解析获取到的时间为：{}", shanghaiDate));
+                return shanghaiDate;
+            } catch (Exception e) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    log.error("{}", e);
+                }
+            }
+        }
+        return null;
+    }
 }

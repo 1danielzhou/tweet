@@ -196,4 +196,9 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
         );
         return tweetSearchKeyword;
     }
+
+    @Override
+    public void update(TweetSearchKeyword tweetSearchKeyword) {
+        tweetSearchKeywordDao.update(tweetSearchKeyword);
+    }
 }

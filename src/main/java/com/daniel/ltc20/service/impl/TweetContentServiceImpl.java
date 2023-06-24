@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.daniel.ltc20.domain.TweetRelationPostView;
+import com.daniel.ltc20.domain.TweetUrl;
 import com.daniel.ltc20.model.TweetContent;
 import com.daniel.ltc20.service.*;
 import com.daniel.ltc20.utils.CollectionUtil;
@@ -109,7 +110,7 @@ public class TweetContentServiceImpl implements TweetContentService {
     }
 
     @Override
-    public List<String> searchLatestTweetUrls(String searchKey, int size, int interval) {
+    public List<TweetUrl> searchLatestTweetUrls(String searchKey, int size, int interval) {
         if (StrUtil.isEmpty(searchKey)) {
             log.error("searchKey不允许为空！！！");
             return new ArrayList<>();
@@ -119,7 +120,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             log.error("browser不允许为空！！！");
             return new ArrayList<>();
         }
-        List<String> urls = new ArrayList<>();
+        List<TweetUrl> tweetUrls = new ArrayList<>();
         String searchUrl = StrUtil.format("https://twitter.com/search?q={}&src=typed_query&f=live", searchKey);
         try {
             browser.get(searchUrl);
@@ -139,12 +140,20 @@ public class TweetContentServiceImpl implements TweetContentService {
                 }
                 for (WebElement cellInnerDivElement : cellInnerDivElements) {
                     String url = parsedTweetUrl(cellInnerDivElement);
-                    if (StrUtil.isNotBlank(url)) {
+                    Date tweetCreateTime = TweetUtil.getTweetCreateTime(cellInnerDivElement);
+                    if (StrUtil.isNotBlank(url) && ObjectUtil.isNotEmpty(tweetCreateTime)) {
                         count++;
                         log.info(StrUtil.format("解析获取到的url为{}", url));
-                        urls.add(url);
+                        String tweetId = url.substring(url.lastIndexOf('/') + 1);
+                        tweetUrls.add(TweetUrl.builder()
+                                .keyword(searchKey)
+                                .tweetId(tweetId)
+                                .tweetUrl(url)
+                                .tweetCreateTime(tweetCreateTime)
+                                .createTime(new Date())
+                                .build());
                     }
-                    if (!TweetUtil.isWithinIntervalHour(cellInnerDivElement,interval)) {
+                    if (!TweetUtil.isWithinIntervalHour(cellInnerDivElement, interval)) {
                         count = size;
                         break;
                     }
@@ -168,9 +177,9 @@ public class TweetContentServiceImpl implements TweetContentService {
                 browser.quit();
             }
         }
-        List<String> uniqueUrls = CollectionUtil.removeDuplicates(urls);
-        log.info(StrUtil.format("搜索关键词{}，一共获取{}条url。去重后还有{}条url", searchKey, urls.size(), uniqueUrls.size()));
-        return uniqueUrls;
+        List<TweetUrl> uniqueTweetUrls = CollectionUtil.removeDuplicates(tweetUrls);
+        log.info(StrUtil.format("搜索关键词{}，一共获取{}条url。去重后还有{}条url", searchKey, tweetUrls.size(), uniqueTweetUrls.size()));
+        return uniqueTweetUrls;
     }
 
     @Override
