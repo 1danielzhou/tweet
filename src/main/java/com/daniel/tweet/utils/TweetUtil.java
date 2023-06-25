@@ -1,14 +1,11 @@
 package com.daniel.tweet.utils;
 
-import com.daniel.tweet.domain.TweetRelationMention;
-import com.daniel.tweet.domain.TweetRelationTopic;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -139,55 +136,5 @@ public class TweetUtil {
         } else {
             return Long.parseLong(number.replace(",", ""));
         }
-    }
-
-    public static List<TweetRelationMention> getTweetMentions(WebDriver driver, Integer index, String tweetId) {
-        if (driver == null || index == null) {
-            return new ArrayList<>();
-        }
-        List<TweetRelationMention> tweetMentions = new ArrayList<>();
-        try {
-            List<WebElement> tweetMentionsDivs = driver.findElements(By.xpath(
-                    String.format("//div[@data-testid='cellInnerDiv'][%d]//div[@data-testid='tweetText']//span[@class='r-18u37iz']", index)));
-            if (tweetMentionsDivs != null && !tweetMentionsDivs.isEmpty()) {
-                for (WebElement tweetMentionsDiv : tweetMentionsDivs) {
-                    if (tweetMentionsDiv != null && tweetMentionsDiv.getText().startsWith("@")) {
-                        tweetMentions.add(TweetRelationMention.builder()
-                                .tweetId(tweetId)
-                                .tweetMention(tweetMentionsDiv.getText())
-                                .createTime(new Date())
-                                .build());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("获取mentions失败，{}", e);
-        }
-        return tweetMentions;
-    }
-
-    public static List<TweetRelationTopic> getTweetTopics(WebDriver driver, Integer index, String tweetId) {
-        if (driver == null || index == null) {
-            return new ArrayList<>();
-        }
-        List<TweetRelationTopic> tweetTopics = new ArrayList<>();
-        try {
-            List<WebElement> tweetTopicsDivs = driver.findElements(By.xpath(
-                    String.format("//div[@data-testid='cellInnerDiv'][%d]//div[@data-testid='tweetText']//span[@class='r-18u37iz']", index)));
-            if (tweetTopicsDivs != null && !tweetTopicsDivs.isEmpty()) {
-                for (WebElement tweetTopicsDiv : tweetTopicsDivs) {
-                    if (tweetTopicsDiv != null && tweetTopicsDiv.getText().startsWith("#")) {
-                        tweetTopics.add(TweetRelationTopic.builder()
-                                .tweetId(tweetId)
-                                .tweetTopic(tweetTopicsDiv.getText())
-                                .createTime(new Date())
-                                .build());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("获取topics失败，{}", e);
-        }
-        return tweetTopics;
     }
 }
