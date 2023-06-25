@@ -9,6 +9,8 @@ import com.daniel.ltc20.service.TweetSearchKeywordService;
 import com.daniel.ltc20.service.TweetUrlService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -69,7 +71,7 @@ public class TweetContentJob {
         }
     }
 
-    @Scheduled(cron = "0 0/1 * * * ?") // 每小时执行一次
+//    @Scheduled(cron = "0 0/1 * * * ?") // 每小时执行一次
     public void refreshHistoricalTweet() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getLastRefreshHistoricalDataFromYesterday();
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {

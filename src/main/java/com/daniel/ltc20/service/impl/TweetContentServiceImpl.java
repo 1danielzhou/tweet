@@ -79,7 +79,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             if (ObjectUtil.isEmpty(index)) {
                 return null;
             }
-            String tweetContentCreateTime = TweetUtil.getTweetContentCreateTime(browser, index);
+//            String tweetContentCreateTime = TweetUtil.getTweetContentCreateTime(browser, index);
             String tweetId = tweetUrl.substring(tweetUrl.lastIndexOf('/') + 1);
             String tweetContentText = TweetUtil.getTweetContentText(browser, index);
             long tweetViewsNumber = TweetUtil.getTweetViewsNumber(browser, index);
@@ -89,7 +89,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             tweetContent.getTweetBaseContent().setTweetContent(tweetContentText);
             tweetContent.getTweetBaseContent().setLatestViewNumber(tweetViewsNumber);
             tweetContent.getTweetBaseContent().setTweetUrl(tweetUrl);
-            tweetContent.getTweetBaseContent().setTweetContentCreateTime(TimeUtil.convertToShanghaiTime(tweetContentCreateTime));
+//            tweetContent.getTweetBaseContent().setTweetContentCreateTime(TimeUtil.convertToShanghaiTime(tweetContentCreateTime));
             tweetContent.getTweetBaseContent().setTweetContentCollectTime(new Date());
             tweetContent.getTweetBaseContent().setCreateTime(new Date());
             tweetContent.getTweetBaseContent().setModifyTime(new Date());
@@ -186,13 +186,7 @@ public class TweetContentServiceImpl implements TweetContentService {
         return uniqueTweetUrls;
     }
 
-    @Override
-    public boolean searchStoreYesterdayTweet(String searchKey) {
-        List<String> yesterdayTweetUrls = getYesterdayTweetUrls(searchKey);
-        return searchStoreTweet(searchKey, yesterdayTweetUrls);
-    }
-
-    private boolean searchStoreTweet(String searchKey, List<String> urls) {
+    private boolean searchStoreTweet_v1(String searchKey, List<String> urls) {
         if (CollUtil.isEmpty(urls)) {
             return true;
         }
@@ -225,35 +219,60 @@ public class TweetContentServiceImpl implements TweetContentService {
         return true;
     }
 
+    private boolean searchStoreTweet(String searchKey, List<TweetUrl> tweetUrls) {
+        if (CollUtil.isEmpty(tweetUrls)) {
+            return true;
+        }
+        WebDriver webDriver = null;
+        try {
+            webDriver = tweetLoginService.loginWithRandomAccount();
+            if(ObjectUtil.isEmpty(webDriver)){
+                return false;
+            }
+            for (int i = 0; i < tweetUrls.size(); i++) {
+                if (ObjectUtil.isEmpty(tweetUrls.get(i))) {
+                    continue;
+                }
+                TweetUrl tweetUrl = tweetUrls.get(i);
+                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, tweetUrl.getTweetUrl());
+                if (ObjectUtil.isEmpty(tweetContent)) {
+                    continue;
+                }
+                tweetContent.getTweetBaseContent().setSearchKey(searchKey);
+                tweetContent.getTweetBaseContent().setLabel("latest");
+                tweetContent.getTweetBaseContent().setTweetContentCreateTime(tweetUrl.getTweetCreateTime());
+                log.info("一共有{}条数据，目前收集到第{}条数据，收集到的数据为{}", tweetUrls.size(), (i+1), tweetContent);
+                this.insertTweetContent(tweetContent);
+            }
+        } catch (Exception e) {
+            log.error("收集tweet信息的时候出错，{}", e);
+        } finally {
+            if (ObjectUtil.isNotEmpty(webDriver)) {
+                webDriver.quit();
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean searchStoreYesterdayTweet(String searchKey) {
+        List<TweetUrl> yesterdayTweetUrls = getYesterdayTweetUrls(searchKey);
+        return searchStoreTweet(searchKey, yesterdayTweetUrls);
+    }
+
     @Override
     public boolean refreshPast7DaysTweet(String keyword) {
-        List<String> yesterdayTweetUrls = getPast7daysTweetUrls(keyword);
-        return searchStoreTweet(keyword, yesterdayTweetUrls);
+        List<TweetUrl> past7daysTweetUrls = getPast7daysTweetUrls(keyword);
+        return searchStoreTweet(keyword, past7daysTweetUrls);
     }
 
-    private List<String> getPast7daysTweetUrls(String keyword) {
+    private List<TweetUrl> getPast7daysTweetUrls(String keyword) {
         Pair<Date, Date> sevenDaysAgoToYesterdayTimeRange = TimeUtil.getSevenDaysAgoToYesterdayTimeRange();
-        List<TweetUrl> tweetUrls = tweetUrlService.getTweetUrlsByTimeRange(keyword,sevenDaysAgoToYesterdayTimeRange.getKey(), sevenDaysAgoToYesterdayTimeRange.getValue());
-        List<String> urls = new ArrayList<>();
-        if (CollUtil.isEmpty(tweetUrls)) {
-            return urls;
-        }
-        for (TweetUrl tweetUrl : tweetUrls) {
-            urls.add(tweetUrl.getTweetUrl());
-        }
-        return urls;
+        return tweetUrlService.getTweetUrlsByTimeRange(keyword,sevenDaysAgoToYesterdayTimeRange.getKey(), sevenDaysAgoToYesterdayTimeRange.getValue());
     }
 
-    private List<String> getYesterdayTweetUrls(String searchKey) {
+    private List<TweetUrl> getYesterdayTweetUrls(String searchKey) {
         Pair<Date, Date> yesterdayTimeRange = TimeUtil.getYesterdayTimeRange();
-        List<TweetUrl> tweetUrls = tweetUrlService.getTweetUrlsByTimeRange(searchKey,yesterdayTimeRange.getKey(), yesterdayTimeRange.getValue());
-        List<String> urls = new ArrayList<>();
-        if (CollUtil.isEmpty(tweetUrls)) {
-            return urls;
-        }
-        for (TweetUrl tweetUrl : tweetUrls) {
-            urls.add(tweetUrl.getTweetUrl());
-        }
-        return urls;
+        return tweetUrlService.getTweetUrlsByTimeRange(searchKey,yesterdayTimeRange.getKey(), yesterdayTimeRange.getValue());
     }
 }
