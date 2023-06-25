@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.daniel.ltc20.dao.TweetViewsDailyDao">
+
+    <resultMap id="BaseResultMap" type="com.daniel.ltc20.domain.TweetViewsDaily">
+        <id column="id" property="id"/>
+        <result column="keyword" property="keyword"/>
+        <result column="label" property="label"/>
+        <result column="tweet_id" property="tweetId"/>
+        <result column="view_date" property="viewDate"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="modify_time" property="modifyTime"/>
+    </resultMap>
+
+    <insert id="insertTweetViewsDaily" parameterType="com.daniel.ltc20.domain.TweetViewsDaily">
+        INSERT INTO tweet_views_daily (keyword, label, tweet_id, view_date, view_count, create_time, modify_time)
+        VALUES (#{keyword}, #{label}, #{tweetId}, #{viewDate}, #{viewCount}, #{createTime}, #{modifyTime})
+    </insert>
+
+    <delete id="deleteTweetViewsDailyById" parameterType="int">
+        DELETE FROM tweet_views_daily WHERE id = #{id}
+    </delete>
+
+    <update id="updateTweetViewsDaily" parameterType="com.daniel.ltc20.domain.TweetViewsDaily">
+        UPDATE tweet_views_daily
+        <set>
+            <if test="keyword != null">
+                keyword = #{keyword},
+            </if>
+            <if test="label != null">
+                label = #{label},
+            </if>
+            <if test="tweetId != null">
+                tweet_id = #{tweetId},
+            </if>
+            <if test="viewDate != null">
+                view_date = #{viewDate},
+            </if>
+            <if test="viewCount != null">
+                view_count = #{viewCount},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="modifyTime != null">
+                modify_time = #{modifyTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="getTweetViewsDailyById" parameterType="int" resultMap="BaseResultMap">
+        SELECT * FROM tweet_views_daily WHERE id = #{id}
+    </select>
+
+    <select id="getTweetViewsDailyByDate" parameterType="java.util.Date" resultMap="BaseResultMap">
+        SELECT * FROM tweet_views_daily WHERE view_date = #{viewDate}
+    </select>
+
+    <select id="getTweetViewsDailyByConditions" parameterType="com.daniel.ltc20.domain.TweetViewsDaily" resultMap="BaseResultMap">
+        SELECT * FROM tweet_views_daily
+        WHERE 1=1
+        <if test="keyword != null">
+            AND keyword = #{keyword}
+        </if>
+        <if test="label != null">
+            AND label = #{label}
+        </if>
+        <if test="tweetId != null">
+            AND tweet_id = #{tweetId}
+        </if>
+        <if test="viewDate != null">
+            AND view_date = #{viewDate}
+        </if>
+    </select>
+</mapper>
+

@@ -1,9 +1,11 @@
 package com.daniel.ltc20.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.lang.Pair;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.daniel.ltc20.domain.TweetRelationPostView;
+import com.daniel.ltc20.domain.TweetUrl;
 import com.daniel.ltc20.model.TweetContent;
 import com.daniel.ltc20.service.*;
 import com.daniel.ltc20.utils.CollectionUtil;
@@ -20,7 +22,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -40,28 +41,31 @@ public class TweetContentServiceImpl implements TweetContentService {
     @Autowired
     private TweetLoginService tweetLoginService;
 
+    @Autowired
+    private TweetUrlService tweetUrlService;
+
     @Override
     public void insertTweetContent(TweetContent tweetContent) {
         if (ObjectUtil.isEmpty(tweetContent)) {
             return;
         }
         if (ObjectUtil.isNotEmpty(tweetContent.getTweetBaseContent())) {
-            tweetBaseContentService.insert(tweetContent.getTweetBaseContent());
+            tweetBaseContentService.insertOrUpdate(tweetContent.getTweetBaseContent());
         }
         if (CollUtil.isNotEmpty(tweetContent.getTweetMentions())) {
-            tweetRelationMentionService.insert(tweetContent.getTweetMentions(), tweetContent.getTweetBaseContent().getTweetId());
+            tweetRelationMentionService.insertOrUpdate(tweetContent.getTweetMentions(), tweetContent.getTweetBaseContent().getTweetId());
         }
         if (CollUtil.isNotEmpty(tweetContent.getPostViews())) {
-            tweetRelationPostViewService.insert(tweetContent.getPostViews(), tweetContent.getTweetBaseContent().getTweetId());
+            tweetRelationPostViewService.insertOrUpdate(tweetContent.getPostViews(), tweetContent.getTweetBaseContent().getTweetId());
         }
         if (CollUtil.isNotEmpty(tweetContent.getTweetTopics())) {
-            tweetRelationTopicService.insert(tweetContent.getTweetTopics(), tweetContent.getTweetBaseContent().getTweetId());
+            tweetRelationTopicService.insertOrUpdate(tweetContent.getTweetTopics(), tweetContent.getTweetBaseContent().getTweetId());
         }
         log.info("写入数据库成功，{}", tweetContent);
     }
 
     @Override
-    public TweetContent queryTweetContentByUrl(WebDriver browser, String tweetUrl) {
+    public TweetContent queryTweetContentByUrl(WebDriver browser, String tweetUrl, String searchKey) {
         if (ObjectUtil.isEmpty(browser) || StrUtil.isBlank(tweetUrl)) {
             log.info("browser和tweetUrl不应该是空！！！");
             return null;
@@ -75,7 +79,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             if (ObjectUtil.isEmpty(index)) {
                 return null;
             }
-            String tweetContentCreateTime = TweetUtil.getTweetContentCreateTime(browser, index);
+//            String tweetContentCreateTime = TweetUtil.getTweetContentCreateTime(browser, index);
             String tweetId = tweetUrl.substring(tweetUrl.lastIndexOf('/') + 1);
             String tweetContentText = TweetUtil.getTweetContentText(browser, index);
             long tweetViewsNumber = TweetUtil.getTweetViewsNumber(browser, index);
@@ -85,7 +89,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             tweetContent.getTweetBaseContent().setTweetContent(tweetContentText);
             tweetContent.getTweetBaseContent().setLatestViewNumber(tweetViewsNumber);
             tweetContent.getTweetBaseContent().setTweetUrl(tweetUrl);
-            tweetContent.getTweetBaseContent().setTweetContentCreateTime(TimeUtil.convertToShanghaiTime(tweetContentCreateTime));
+//            tweetContent.getTweetBaseContent().setTweetContentCreateTime(TimeUtil.convertToShanghaiTime(tweetContentCreateTime));
             tweetContent.getTweetBaseContent().setTweetContentCollectTime(new Date());
             tweetContent.getTweetBaseContent().setCreateTime(new Date());
             tweetContent.getTweetBaseContent().setModifyTime(new Date());
@@ -95,6 +99,7 @@ public class TweetContentServiceImpl implements TweetContentService {
 
             List<TweetRelationPostView> postViews = new ArrayList<>();
             postViews.add(TweetRelationPostView.builder()
+                    .keyword(searchKey)
                     .tweetId(tweetId)
                     .collectDate(TimeUtil.getCurrentDateInShanghai())
                     .viewNumber(tweetViewsNumber)
@@ -110,7 +115,7 @@ public class TweetContentServiceImpl implements TweetContentService {
     }
 
     @Override
-    public List<String> searchLatestTweetUrls(String searchKey, int size, boolean searchPast24H) {
+    public List<TweetUrl> searchLatestTweetUrls(String searchKey, int size, int interval) {
         if (StrUtil.isEmpty(searchKey)) {
             log.error("searchKey不允许为空！！！");
             return new ArrayList<>();
@@ -120,25 +125,40 @@ public class TweetContentServiceImpl implements TweetContentService {
             log.error("browser不允许为空！！！");
             return new ArrayList<>();
         }
-        List<String> urls = new ArrayList<>();
+        List<TweetUrl> tweetUrls = new ArrayList<>();
         String searchUrl = StrUtil.format("https://twitter.com/search?q={}&src=typed_query&f=live", searchKey);
         try {
             browser.get(searchUrl);
             Thread.sleep(3000);
             int count = 0;
+
+            String js_bottom = "window.scrollTo(0, document.body.scrollHeight);";
+            JavascriptExecutor jsExecutor = (JavascriptExecutor) browser;
+
+            long prevScrollHeight = 0;
+            long currScrollHeight = (long) jsExecutor.executeScript("return document.body.scrollHeight;");
+
             while (true) {
                 List<WebElement> cellInnerDivElements = browser.findElements(By.xpath("//section//div[@data-testid=\"cellInnerDiv\"]"));
                 if (CollUtil.isEmpty(cellInnerDivElements)) {
                     break;
                 }
                 for (WebElement cellInnerDivElement : cellInnerDivElements) {
-                    String url = parsedTweetUrl(cellInnerDivElement);
-                    if (StrUtil.isNotBlank(url)) {
+                    String url = TweetUtil.parsedTweetUrl(cellInnerDivElement);
+                    Date tweetCreateTime = TweetUtil.getTweetCreateTime(cellInnerDivElement);
+                    if (StrUtil.isNotBlank(url) && ObjectUtil.isNotEmpty(tweetCreateTime)) {
                         count++;
                         log.info(StrUtil.format("解析获取到的url为{}", url));
-                        urls.add(url);
+                        String tweetId = url.substring(url.lastIndexOf('/') + 1);
+                        tweetUrls.add(TweetUrl.builder()
+                                .keyword(searchKey)
+                                .tweetId(tweetId)
+                                .tweetUrl(url)
+                                .tweetCreateTime(tweetCreateTime)
+                                .createTime(new Date())
+                                .build());
                     }
-                    if (searchPast24H && !isWithinPast24H(cellInnerDivElement)) {
+                    if (!TweetUtil.isWithinIntervalHour(cellInnerDivElement, interval)) {
                         count = size;
                         break;
                     }
@@ -146,10 +166,14 @@ public class TweetContentServiceImpl implements TweetContentService {
                 if (count >= size) {
                     break;
                 }
-                String js_bottom = "window.scrollTo(0, document.body.scrollHeight);";
-                JavascriptExecutor jsExecutor = (JavascriptExecutor) browser;
                 jsExecutor.executeScript(js_bottom);
                 Thread.sleep(3000);
+                prevScrollHeight = currScrollHeight;
+                currScrollHeight = (long) jsExecutor.executeScript("return document.body.scrollHeight;");
+                if (currScrollHeight == prevScrollHeight) {
+                    log.info("滚到底了");
+                    break;
+                }
             }
         } catch (Exception e) {
             log.error("获取最新推特Urls时出现错误，请检查响应的代码！！！");
@@ -158,34 +182,26 @@ public class TweetContentServiceImpl implements TweetContentService {
                 browser.quit();
             }
         }
-        log.info(StrUtil.format("搜索关键词{}，一共获取{}条url", searchKey, urls.size()));
-        return CollectionUtil.removeDuplicates(urls);
+        List<TweetUrl> uniqueTweetUrls = CollectionUtil.removeDuplicates(tweetUrls);
+        log.info(StrUtil.format("搜索关键词{}，一共获取{}条url。去重后还有{}条url", searchKey, tweetUrls.size(), uniqueTweetUrls.size()));
+        return uniqueTweetUrls;
     }
 
-    @Override
-    public Long searchStorePass24HTweet(String searchKey) {
-        return searchStoreTweet(searchKey,true);
-    }
-
-    @Override
-    public Long initTweetContentByNewKeyword(String searchKey) {
-        return searchStoreTweet(searchKey,false);
-    }
-
-    private Long searchStoreTweet(String searchKey, boolean searchPast24H) {
+    private boolean searchStoreTweet_v1(String searchKey, List<String> urls) {
+        if (CollUtil.isEmpty(urls)) {
+            return true;
+        }
         WebDriver webDriver = null;
-        List<String> urls = new ArrayList<>();
         try {
-            urls = this.searchLatestTweetUrls(searchKey, 100000, searchPast24H);
-            if (CollUtil.isEmpty(urls)) {
-                return 0L;
-            }
             webDriver = tweetLoginService.loginWithRandomAccount();
+            if (ObjectUtil.isEmpty(webDriver)) {
+                return false;
+            }
             for (int i = 0; i < urls.size(); i++) {
                 if (StrUtil.isBlank(urls.get(i))) {
                     continue;
                 }
-                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, urls.get(i));
+                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, urls.get(i), searchKey);
                 if (ObjectUtil.isEmpty(tweetContent)) {
                     continue;
                 }
@@ -201,53 +217,63 @@ public class TweetContentServiceImpl implements TweetContentService {
                 webDriver.quit();
             }
         }
-        if (CollUtil.isEmpty(urls)) {
-            return 0L;
-        } else {
-            return (long) urls.size();
-        }
+        return true;
     }
 
-    private String parsedTweetUrl(WebElement cellInnerDivElement) {
-        if (ObjectUtil.isEmpty(cellInnerDivElement)) {
-            return "";
+    private boolean searchStoreTweet(String searchKey, List<TweetUrl> tweetUrls) {
+        if (CollUtil.isEmpty(tweetUrls)) {
+            return true;
         }
+        WebDriver webDriver = null;
         try {
-            WebElement element = cellInnerDivElement.findElement(By.xpath(".//a[@class=\"css-4rbku5 css-18t94o4 css-1dbjc4n r-1loqt21 r-1777fci r-bt1l66 r-1ny4l3l r-bztko3 r-lrvibr\"]"));
-            if (ObjectUtil.isNotEmpty(element) && StrUtil.isNotBlank(element.getAttribute("href"))) {
-                return element.getAttribute("href").replace("/analytics", "");
+            webDriver = tweetLoginService.loginWithRandomAccount();
+            if (ObjectUtil.isEmpty(webDriver)) {
+                return false;
+            }
+            for (int i = 0; i < tweetUrls.size(); i++) {
+                if (ObjectUtil.isEmpty(tweetUrls.get(i))) {
+                    continue;
+                }
+                TweetUrl tweetUrl = tweetUrls.get(i);
+                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, tweetUrl.getTweetUrl(),searchKey);
+                if (ObjectUtil.isEmpty(tweetContent)) {
+                    continue;
+                }
+                tweetContent.getTweetBaseContent().setSearchKey(searchKey);
+                tweetContent.getTweetBaseContent().setLabel("latest");
+                tweetContent.getTweetBaseContent().setTweetContentCreateTime(tweetUrl.getTweetCreateTime());
+                log.info("一共有{}条数据，目前收集到第{}条数据，收集到的数据为{}", tweetUrls.size(), (i + 1), tweetContent);
+                this.insertTweetContent(tweetContent);
             }
         } catch (Exception e) {
-            log.error(StrUtil.format("解析获取URL时出错"));
-        }
-        return "";
-    }
-
-    private boolean isWithinPast24H(WebElement cellInnerDivElement) {
-        if (ObjectUtil.isEmpty(cellInnerDivElement)) {
-            return false;
-        }
-        int RETRY_LIMIT = 3;
-        Pattern TIME_PATTERN = Pattern.compile("^\\d+[mh]$");
-        for (int i = 0; i < RETRY_LIMIT; i++) {
-            try {
-                WebElement tweetContentCreateTimeDiv = cellInnerDivElement.findElement(By.xpath(".//time"));
-                String timeSinceNow = tweetContentCreateTimeDiv.getText();
-                log.info(StrUtil.format("解析获取到的时间为：{}", timeSinceNow));
-                if (TIME_PATTERN.matcher(timeSinceNow).matches()) {
-                    return true;
-                } else {
-                    return false;
-                }
-            } catch (Exception e) {
-                log.error("{}", e);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                    log.error("{}", e);
-                }
+            log.error("收集tweet信息的时候出错，{}", e);
+        } finally {
+            if (ObjectUtil.isNotEmpty(webDriver)) {
+                webDriver.quit();
             }
         }
         return true;
+    }
+
+    @Override
+    public boolean searchStoreYesterdayTweet(String searchKey) {
+        List<TweetUrl> yesterdayTweetUrls = getYesterdayTweetUrls(searchKey);
+        return searchStoreTweet(searchKey, yesterdayTweetUrls);
+    }
+
+    @Override
+    public boolean refreshPast7DaysTweet(String keyword) {
+        List<TweetUrl> past7daysTweetUrls = getPast7daysTweetUrls(keyword);
+        return searchStoreTweet(keyword, past7daysTweetUrls);
+    }
+
+    private List<TweetUrl> getPast7daysTweetUrls(String keyword) {
+        Pair<Date, Date> sevenDaysAgoToYesterdayTimeRange = TimeUtil.getSevenDaysAgoToYesterdayTimeRange();
+        return tweetUrlService.getTweetUrlsByTimeRange(keyword, sevenDaysAgoToYesterdayTimeRange.getKey(), sevenDaysAgoToYesterdayTimeRange.getValue());
+    }
+
+    private List<TweetUrl> getYesterdayTweetUrls(String searchKey) {
+        Pair<Date, Date> yesterdayTimeRange = TimeUtil.getYesterdayTimeRange();
+        return tweetUrlService.getTweetUrlsByTimeRange(searchKey, yesterdayTimeRange.getKey(), yesterdayTimeRange.getValue());
     }
 }

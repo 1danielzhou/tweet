@@ -28,4 +28,10 @@ public class TweetSearchKeywordController {
     public List<TweetSearchKeyword> collectData() {
         return tweetSearchKeywordService.queryAllTweetSearchKeyword();
     }
+
+    @RequestMapping(value = "/delete", method = RequestMethod.GET)
+    public String add(Integer id) {
+        tweetSearchKeywordService.deleteById(id);
+        return "删除成功";
+    }
 }

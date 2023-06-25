@@ -11,12 +11,11 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class TweetRelationPostView {
+public class TweetUrl {
     private Integer id;
     private String keyword;
     private String tweetId;
-    private Date collectDate;
-    private Long viewNumber;
+    private String tweetUrl;
+    private Date tweetCreateTime;
     private Date createTime;
-    private Date modifyTime;
 }

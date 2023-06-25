@@ -47,4 +47,24 @@
                 #{tweetContentCollectTime}, #{createTime}, #{modifyTime})
     </insert>
 
+    <update id="update" parameterType="com.daniel.ltc20.domain.TweetBaseContent">
+        UPDATE tweet_base_content
+        <set>
+            <if test="id != null">id = #{id},</if>
+            <if test="tweetId != null">tweet_id = #{tweetId},</if>
+            <if test="searchKey != null">search_key = #{searchKey},</if>
+            <if test="label != null">label = #{label},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="tweetContent != null">tweet_content = #{tweetContent},</if>
+            <if test="latestViewNumber != null">latest_view_number = #{latestViewNumber},</if>
+            <if test="tweetUrl != null">tweet_url = #{tweetUrl},</if>
+            <if test="screenshotUrl != null">screenshot_url = #{screenshotUrl},</if>
+            <if test="tweetContentCreateTime != null">tweet_content_create_time = #{tweetContentCreateTime},</if>
+            <if test="tweetContentCollectTime != null">tweet_content_collect_time = #{tweetContentCollectTime},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="modifyTime != null">modify_time = #{modifyTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
 </mapper>

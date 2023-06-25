@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.daniel.ltc20.dao.TweetUrlDao">
+    <resultMap id="BaseResultMap" type="com.daniel.ltc20.domain.TweetUrl">
+        <id column="id" property="id"/>
+        <result column="keyword" property="keyword"/>
+        <result column="tweet_id" property="tweetId"/>
+        <result column="tweet_url" property="tweetUrl"/>
+        <result column="tweet_create_time" property="tweetCreateTime"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        keyword,tweet_id,tweet_url, tweet_create_time,create_time
+    </sql>
+
+    <insert id="insertTweetUrls" parameterType="java.util.List">
+        INSERT INTO tweet_url (keyword,tweet_id,tweet_url, tweet_create_time,create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            ( #{keyword},#{tweetId},#{tweetUrl}, #{tweetCreateTime},#{createTime})
+        </foreach>
+    </insert>
+
+    <insert id="insertTweetUrl" parameterType="com.daniel.ltc20.domain.TweetUrl">
+        INSERT INTO tweet_url (keyword,tweet_id, tweet_url, tweet_create_time, create_time)
+        VALUES (#{keyword},#{tweetId}, #{tweetUrl}, #{tweetCreateTime}, #{createTime})
+    </insert>
+
+    <select id="queryTweetUrlsByTweetId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM tweet_url
+        WHERE tweet_id = #{tweetId}
+    </select>
+
+    <select id="queryTweetUrlsByTimeRange" resultMap="BaseResultMap" parameterType="java.util.Map">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM tweet_url
+        WHERE keyword = #{searchKey} and tweet_create_time BETWEEN #{from} AND #{to}
+    </select>
+</mapper>

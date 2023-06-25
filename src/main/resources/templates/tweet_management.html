@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Tweet搜索关键字</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            color: blue;
+        }
+
+        .float-page {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+<h1 style="text-align: center; color: blue;">Tweet搜索关键字</h1>
+<a href="#" class="btn btn-primary float-right" data-toggle="modal" data-target="#exampleModal">新增</a>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>关键词</th>
+        <th>初始状态</th>
+        <th>初始数据数量</th>
+        <th>操作</th>
+        <th>初始化数据</th>
+        <th>刷新数据</th>
+        <th>创建时间</th>
+        <th>修改时间</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="keyword, row : ${data}" th:class="${row.even} ? 'even' : 'odd'">
+        <td th:text="${keyword.id}"></td>
+        <td th:text="${keyword.keyword}"></td>
+        <td th:text="${keyword.initStatus}"></td>
+        <td th:text="${keyword.initDataNumber}"></td>
+        <td>
+            <button class="btn btn-danger" onclick="confirmDelete(this.getAttribute('data-keyword-id'))"
+                    th:data-keyword-id="${keyword.id}">删除
+            </button>
+        </td>
+        <td>
+            <button class="btn btn-primary"
+                    th:text="${keyword.initStatus == 0 ? '初始化' : (keyword.initStatus == 1 ? '正在初始化': '已初始化')}"
+                    th:disabled="${keyword.initStatus != 0}"
+                    onclick="initData(this.getAttribute('data-keyword'))"
+                    th:data-keyword="${keyword.keyword}">初始化
+            </button>
+        </td>
+        <td>
+            <button class="btn btn-primary"
+                    th:text="${keyword.refreshDataFlag == 0 ? '刷新' : (keyword.refreshDataFlag == 1 ? '正在刷新' : '已完成')}"
+                    th:disabled="${keyword.refreshDataFlag != 0}"
+                    onclick="refreshData(this.getAttribute('data-keyword'))"
+                    th:data-keyword="${keyword.keyword}">刷新
+            </button>
+        </td>
+        <td th:text="${keyword.createTime}"></td>
+        <td th:text="${keyword.modifyTime}"></td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">新增搜索关键词</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="keywordInput">关键字：</label>
+                    <input type="text" class="form-control" id="keywordInput">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="saveKeyword()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="resultModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="resultModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resultModalLabel">执行结果</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <pre id="resultContent"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="refreshPage()">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    function saveKeyword() {
+        var keyword = document.getElementById("keywordInput").value;
+        var url = "/tweet/keyword/add?searchKey=" + encodeURIComponent(keyword);
+        fetch(url)
+            .then(response => response.text())
+            .then(result => {
+                document.getElementById("resultContent").innerText = result;
+                $('#resultModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    function confirmDelete(id) {
+        if (confirm("确定要删除吗？")) {
+            var url = "/tweet/keyword/delete?id=" + encodeURIComponent(id);
+            fetch(url)
+                .then(response => response.text())
+                .then(result => {
+                    document.getElementById("resultContent").innerText = result;
+                    $('#resultModal').modal('show');
+                    refreshPage();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    }
+
+    function initData(keyword) {
+        var url = "/tweet/collectData/init?searchKey=" + encodeURIComponent(keyword);
+        fetch(url)
+            .then(response => response.text())
+            .then(result => {
+                document.getElementById("resultContent").innerText = result;
+                $('#resultModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    function refreshData(keyword) {
+        var url = "/tweet/collectData/searchPast24H?searchKey=" + encodeURIComponent(keyword);
+        fetch(url)
+            .then(response => response.text())
+            .then(result => {
+                document.getElementById("resultContent").innerText = result;
+                $('#resultModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    function refreshPage() {
+        location.reload();
+    }
+</script>
+</body>
+</html>
