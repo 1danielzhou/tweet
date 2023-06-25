@@ -115,7 +115,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
-          <mainClass>com.daniel.ltc20.Ltc20Application</mainClass>
+          <mainClass>com.daniel.tweet.TweetApplication</mainClass>
         </configuration>
       </plugin>
     </plugins>
