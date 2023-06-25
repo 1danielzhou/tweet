@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.daniel.tweet.dao.TweetBaseContentDao">
+    <resultMap id="BaseResultMap" type="com.daniel.tweet.domain.TweetBaseContent">
+        <id column="id" property="id"/>
+        <result column="tweet_id" property="tweetId"/>
+        <result column="search_key" property="searchKey"/>
+        <result column="label" property="label"/>
+        <result column="user_id" property="userId"/>
+        <result column="tweet_content" property="tweetContent"/>
+        <result column="latest_view_number" property="latestViewNumber"/>
+        <result column="tweet_url" property="tweetUrl"/>
+        <result column="screenshot_url" property="screenshotUrl"/>
+        <result column="tweet_content_create_time" property="tweetContentCreateTime"/>
+        <result column="tweet_content_collect_time" property="tweetContentCollectTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="modify_time" property="modifyTime"/>
+    </resultMap>
+
+    <select id="findAllUniqueUserIds" resultType="java.lang.String" >
+        SELECT DISTINCT user_id FROM tweet_base_content
+    </select>
+
+</mapper>
