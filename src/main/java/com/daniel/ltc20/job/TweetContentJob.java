@@ -32,12 +32,12 @@ public class TweetContentJob {
     @Autowired
     private TweetRelationPostViewService tweetRelationPostViewService;
 
-//    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
+    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
     public void getTweetUrl() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getRandomUnupdatedDataWithinInterval(INTERVAL);
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
             log.info("关键词{}的Urls在{}小时内未更新，下面尝试进行更新操作,{}", tweetSearchKeyword.getKeyword(), INTERVAL, tweetSearchKeyword);
-            List<TweetUrl> tweetUrls = tweetContentService.searchLatestTweetUrls(tweetSearchKeyword.getKeyword(), 5000, 100);
+            List<TweetUrl> tweetUrls = tweetContentService.searchLatestTweetUrls(tweetSearchKeyword.getKeyword(), 5000, 10);
             if (CollUtil.isEmpty(tweetUrls)) {
                 log.info("获取Url失败或者获取为空，将lastUrlUpdateTime还原回：{},以便再次获取", tweetSearchKeyword.getLastUrlUpdateTime());
                 tweetSearchKeywordService.update(TweetSearchKeyword.builder()
@@ -48,13 +48,18 @@ public class TweetContentJob {
             } else {
                 log.info("一共获取到{}个链接，将其插入数据库中", tweetUrls.size());
                 tweetUrlService.insertTweetUrls(tweetUrls);
+                tweetSearchKeywordService.update(TweetSearchKeyword.builder()
+                        .id(tweetSearchKeyword.getId())
+                        .lastUrlUpdateEndTime(new Date())
+                        .modifyTime(new Date())
+                        .build());
             }
         } else {
             log.info("没有查询到在过去{}小时未更新的关键词", INTERVAL);
         }
     }
 
-//    @Scheduled(cron = "0 0/1 * * * ?")
+    @Scheduled(cron = "0 0/1 * * * ?")
     public void searchStoreYesterdayTweet() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getLastCollectedRandomDataFromYesterday();
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
@@ -73,13 +78,14 @@ public class TweetContentJob {
                         .lastCollectDataEndTime(new Date())
                         .modifyTime(new Date())
                         .build());
+                log.info("收集昨天新发的tweet结束，更新结束的时间");
             }
         } else {
             log.info("没有查询到在过去{}小时未更新前一天数据的关键词", 24);
         }
     }
 
-    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
+//    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
     public void refreshHistoricalTweet() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getLastRefreshHistoricalDataFromYesterday();
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
@@ -104,7 +110,7 @@ public class TweetContentJob {
         }
     }
 
-    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
+//    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
     public void postProcessTweet() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.queryUnPostProcessKeyword();
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
