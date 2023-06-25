@@ -13,7 +13,7 @@ public interface TweetContentService {
 
     void insertTweetContent(TweetContent tweetContent);
 
-    TweetContent queryTweetContentByUrl(WebDriver browser, String tweetUrl);
+    TweetContent queryTweetContentByUrl(WebDriver browser, String tweetUrl,String keyword);
 
     List<TweetUrl> searchLatestTweetUrls(String searchKey, int size, int interval);
 

@@ -87,6 +87,26 @@ public class TimeUtil {
         return Pair.of(startDate, endDate);
     }
 
+    public static Pair<Date, Date> getTodayTimeRange() {
+        // 获取当前北京时间
+        ZoneId zoneId = ZoneId.of("Asia/Shanghai");
+        ZonedDateTime now = ZonedDateTime.now(zoneId);
+
+        // 获取今天的开始时间和结束时间
+        LocalDate today = now.toLocalDate();
+        LocalDateTime todayStart = today.atStartOfDay();
+        LocalDateTime todayEnd = today.atTime(LocalTime.MAX);
+
+        // 转换为Date类型
+        Instant startInstant = todayStart.atZone(zoneId).toInstant();
+        Instant endInstant = todayEnd.atZone(zoneId).toInstant();
+        Date startDate = Date.from(startInstant);
+        Date endDate = Date.from(endInstant);
+
+        // 返回时间范围
+        return Pair.of(startDate, endDate);
+    }
+
     public static Pair<Date, Date> getSevenDaysAgoToYesterdayTimeRange() {
         // 获取当前北京时间
         ZoneId zoneId = ZoneId.of("Asia/Shanghai");

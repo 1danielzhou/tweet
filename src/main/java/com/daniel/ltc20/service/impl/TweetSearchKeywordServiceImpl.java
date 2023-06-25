@@ -279,4 +279,44 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
         );
         return tweetSearchKeyword;
     }
+
+    @Override
+    public TweetSearchKeyword queryUnPostProcessKeyword() {
+        List<TweetSearchKeyword> tweetSearchKeywords = tweetSearchKeywordDao.queryTweetSearchKeywords();
+        if (CollUtil.isEmpty(tweetSearchKeywords)) {
+            return null;
+        }
+
+        Pair<Date, Date> todayTimeRange = TimeUtil.getTodayTimeRange();
+        List<TweetSearchKeyword> unupdatedKeywords = new ArrayList<>();
+        for (TweetSearchKeyword keyword : tweetSearchKeywords) {
+            try {
+                if (keyword.getLastCollectDataEndTime().after(todayTimeRange.getKey()) &&
+                        keyword.getLastRefreshHistoricalDataEndTime().after(todayTimeRange.getKey()) &&
+                        keyword.getLastPostProcessTime().before(todayTimeRange.getKey())) {
+                    unupdatedKeywords.add(keyword);
+                }
+            } catch (Exception e) {
+                unupdatedKeywords.add(keyword);
+            }
+        }
+
+        if (CollUtil.isEmpty(unupdatedKeywords)) {
+            return null;
+        }
+
+        Random random = new Random();
+        int randomIndex = random.nextInt(unupdatedKeywords.size());
+        TweetSearchKeyword tweetSearchKeyword = unupdatedKeywords.get(randomIndex);
+
+        tweetSearchKeywordDao.update(
+                TweetSearchKeyword
+                        .builder()
+                        .id(tweetSearchKeyword.getId())
+                        .lastPostProcessTime(new Date())
+                        .modifyTime(new Date())
+                        .build()
+        );
+        return tweetSearchKeyword;
+    }
 }

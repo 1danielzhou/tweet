@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface TweetRelationPostViewService {
     void insertOrUpdate(List<TweetRelationPostView> list, String tweetId);
+
+    void postProcess(String keyword);
 }

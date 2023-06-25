@@ -5,12 +5,11 @@ import cn.hutool.core.util.ObjectUtil;
 import com.daniel.ltc20.domain.TweetSearchKeyword;
 import com.daniel.ltc20.domain.TweetUrl;
 import com.daniel.ltc20.service.TweetContentService;
+import com.daniel.ltc20.service.TweetRelationPostViewService;
 import com.daniel.ltc20.service.TweetSearchKeywordService;
 import com.daniel.ltc20.service.TweetUrlService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +29,10 @@ public class TweetContentJob {
     @Autowired
     private TweetUrlService tweetUrlService;
 
-    @Scheduled(cron = "0 0/1 * * * ?") // 每小时执行一次
+    @Autowired
+    private TweetRelationPostViewService tweetRelationPostViewService;
+
+//    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
     public void getTweetUrl() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getRandomUnupdatedDataWithinInterval(INTERVAL);
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
@@ -52,7 +54,7 @@ public class TweetContentJob {
         }
     }
 
-    @Scheduled(cron = "0 0/1 * * * ?")
+//    @Scheduled(cron = "0 0/1 * * * ?")
     public void searchStoreYesterdayTweet() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getLastCollectedRandomDataFromYesterday();
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
@@ -65,13 +67,19 @@ public class TweetContentJob {
                         .lastCollectDataTime(tweetSearchKeyword.getLastCollectDataTime())
                         .modifyTime(new Date())
                         .build());
+            } else {
+                tweetSearchKeywordService.update(TweetSearchKeyword.builder()
+                        .id(tweetSearchKeyword.getId())
+                        .lastCollectDataEndTime(new Date())
+                        .modifyTime(new Date())
+                        .build());
             }
         } else {
             log.info("没有查询到在过去{}小时未更新前一天数据的关键词", 24);
         }
     }
 
-//    @Scheduled(cron = "0 0/1 * * * ?") // 每小时执行一次
+    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
     public void refreshHistoricalTweet() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getLastRefreshHistoricalDataFromYesterday();
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
@@ -84,9 +92,39 @@ public class TweetContentJob {
                         .lastRefreshHistoricalDataTime(tweetSearchKeyword.getLastCollectDataTime())
                         .modifyTime(new Date())
                         .build());
+            } else {
+                tweetSearchKeywordService.update(TweetSearchKeyword.builder()
+                        .id(tweetSearchKeyword.getId())
+                        .lastRefreshHistoricalDataEndTime(new Date())
+                        .modifyTime(new Date())
+                        .build());
             }
         } else {
             log.info("没有查询到在过去{}小时未更新过去7天历史数据的关键词", 24);
+        }
+    }
+
+    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
+    public void postProcessTweet() {
+        TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.queryUnPostProcessKeyword();
+        if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
+            log.info("查询到一个还没有进行后处理的keyword:{}，下面进行后处理,{}", tweetSearchKeyword.getKeyword(), tweetSearchKeyword);
+            try {
+                tweetRelationPostViewService.postProcess(tweetSearchKeyword.getKeyword());
+                log.info("keyword:{}的post process 结束，", tweetSearchKeyword.getKeyword());
+            } catch (Exception e) {
+                log.info("post process失败将时间进行还原，{}", tweetSearchKeyword);
+                tweetSearchKeywordService.update(
+                        TweetSearchKeyword
+                                .builder()
+                                .id(tweetSearchKeyword.getId())
+                                .lastPostProcessTime(tweetSearchKeyword.getLastPostProcessTime())
+                                .modifyTime(new Date())
+                                .build()
+                );
+            }
+        } else {
+            log.info("没有查询到需要post process的关键词");
         }
     }
 }

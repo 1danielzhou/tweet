@@ -65,7 +65,7 @@ public class TweetContentServiceImpl implements TweetContentService {
     }
 
     @Override
-    public TweetContent queryTweetContentByUrl(WebDriver browser, String tweetUrl) {
+    public TweetContent queryTweetContentByUrl(WebDriver browser, String tweetUrl, String searchKey) {
         if (ObjectUtil.isEmpty(browser) || StrUtil.isBlank(tweetUrl)) {
             log.info("browser和tweetUrl不应该是空！！！");
             return null;
@@ -99,6 +99,7 @@ public class TweetContentServiceImpl implements TweetContentService {
 
             List<TweetRelationPostView> postViews = new ArrayList<>();
             postViews.add(TweetRelationPostView.builder()
+                    .keyword(searchKey)
                     .tweetId(tweetId)
                     .collectDate(TimeUtil.getCurrentDateInShanghai())
                     .viewNumber(tweetViewsNumber)
@@ -193,14 +194,14 @@ public class TweetContentServiceImpl implements TweetContentService {
         WebDriver webDriver = null;
         try {
             webDriver = tweetLoginService.loginWithRandomAccount();
-            if(ObjectUtil.isEmpty(webDriver)){
+            if (ObjectUtil.isEmpty(webDriver)) {
                 return false;
             }
             for (int i = 0; i < urls.size(); i++) {
                 if (StrUtil.isBlank(urls.get(i))) {
                     continue;
                 }
-                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, urls.get(i));
+                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, urls.get(i), searchKey);
                 if (ObjectUtil.isEmpty(tweetContent)) {
                     continue;
                 }
@@ -226,7 +227,7 @@ public class TweetContentServiceImpl implements TweetContentService {
         WebDriver webDriver = null;
         try {
             webDriver = tweetLoginService.loginWithRandomAccount();
-            if(ObjectUtil.isEmpty(webDriver)){
+            if (ObjectUtil.isEmpty(webDriver)) {
                 return false;
             }
             for (int i = 0; i < tweetUrls.size(); i++) {
@@ -234,14 +235,14 @@ public class TweetContentServiceImpl implements TweetContentService {
                     continue;
                 }
                 TweetUrl tweetUrl = tweetUrls.get(i);
-                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, tweetUrl.getTweetUrl());
+                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, tweetUrl.getTweetUrl(),searchKey);
                 if (ObjectUtil.isEmpty(tweetContent)) {
                     continue;
                 }
                 tweetContent.getTweetBaseContent().setSearchKey(searchKey);
                 tweetContent.getTweetBaseContent().setLabel("latest");
                 tweetContent.getTweetBaseContent().setTweetContentCreateTime(tweetUrl.getTweetCreateTime());
-                log.info("一共有{}条数据，目前收集到第{}条数据，收集到的数据为{}", tweetUrls.size(), (i+1), tweetContent);
+                log.info("一共有{}条数据，目前收集到第{}条数据，收集到的数据为{}", tweetUrls.size(), (i + 1), tweetContent);
                 this.insertTweetContent(tweetContent);
             }
         } catch (Exception e) {
@@ -268,11 +269,11 @@ public class TweetContentServiceImpl implements TweetContentService {
 
     private List<TweetUrl> getPast7daysTweetUrls(String keyword) {
         Pair<Date, Date> sevenDaysAgoToYesterdayTimeRange = TimeUtil.getSevenDaysAgoToYesterdayTimeRange();
-        return tweetUrlService.getTweetUrlsByTimeRange(keyword,sevenDaysAgoToYesterdayTimeRange.getKey(), sevenDaysAgoToYesterdayTimeRange.getValue());
+        return tweetUrlService.getTweetUrlsByTimeRange(keyword, sevenDaysAgoToYesterdayTimeRange.getKey(), sevenDaysAgoToYesterdayTimeRange.getValue());
     }
 
     private List<TweetUrl> getYesterdayTweetUrls(String searchKey) {
         Pair<Date, Date> yesterdayTimeRange = TimeUtil.getYesterdayTimeRange();
-        return tweetUrlService.getTweetUrlsByTimeRange(searchKey,yesterdayTimeRange.getKey(), yesterdayTimeRange.getValue());
+        return tweetUrlService.getTweetUrlsByTimeRange(searchKey, yesterdayTimeRange.getKey(), yesterdayTimeRange.getValue());
     }
 }

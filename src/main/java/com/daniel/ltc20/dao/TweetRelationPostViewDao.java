@@ -3,6 +3,7 @@ package com.daniel.ltc20.dao;
 import com.daniel.ltc20.domain.TweetRelationPostView;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Date;
 import java.util.List;
 
 @Mapper
@@ -14,4 +15,6 @@ public interface TweetRelationPostViewDao {
     void insertTweetRelationPostViews(List<TweetRelationPostView> list);
 
     void update(TweetRelationPostView tweetRelationPostView);
+
+    List<TweetRelationPostView> selectByKeywordAndCollectDate(String keyword, Date collectDate);
 }

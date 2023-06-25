@@ -9,33 +9,73 @@
         <result column="is_deleted" property="isDeleted"/>
         <result column="refresh_data_flag" property="refreshDataFlag"/>
         <result column="last_url_update_time" property="lastUrlUpdateTime"/>
+        <result column="last_url_update_end_time" property="lastUrlUpdateEndTime"/>
         <result column="last_collect_data_time" property="lastCollectDataTime"/>
+        <result column="last_collect_data_end_time" property="lastCollectDataEndTime"/>
         <result column="last_refresh_historical_data_time" property="lastRefreshHistoricalDataTime"/>
+        <result column="last_refresh_historical_data_end_time" property="lastRefreshHistoricalDataEndTime"/>
+        <result column="last_post_process_time" property="lastPostProcessTime"/>
         <result column="create_time" property="createTime"/>
         <result column="modify_time" property="modifyTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
-        , keyword,init_status,init_data_number,is_deleted,refresh_data_flag,last_url_update_time,last_collect_data_time,last_refresh_historical_data_time, create_time,modify_time
+        , keyword, init_status, init_data_number, is_deleted, refresh_data_flag,
+    last_url_update_time, last_url_update_end_time, last_collect_data_time,
+    last_collect_data_end_time, last_refresh_historical_data_time,
+    last_refresh_historical_data_end_time, last_post_process_time,
+    create_time, modify_time
     </sql>
 
+
     <insert id="insertTweetSearchKeyword" parameterType="com.daniel.ltc20.domain.TweetSearchKeyword">
-        INSERT INTO tweet_search_keyword (keyword, init_status, init_data_number, is_deleted, refresh_data_flag,lastUrlUpdateTime,last_collect_data_time,last_refresh_historical_data_time
-                                          ,create_time, modify_time)
-        VALUES (#{keyword}, #{initStatus}, #{initDataNumber}, #{isDeleted}, #{refreshDataFlag}, #{lastUrlUpdateTime}, #{lastCollectDataTime}, #{lastRefreshHistoricalDataTime}, #{createTime},
-                #{modifyTime})
+        INSERT INTO tweet_search_keyword (keyword, init_status, init_data_number, is_deleted, refresh_data_flag,
+                                          last_url_update_time, last_url_update_end_time,
+                                          last_collect_data_end_time, last_refresh_historical_data_end_time,
+                                          last_post_process_time,
+                                          last_collect_data_time,
+                                          last_refresh_historical_data_time,
+                                          create_time, modify_time)
+        VALUES (#{keyword}, #{initStatus}, #{initDataNumber}, #{isDeleted}, #{refreshDataFlag},
+                #{lastUrlUpdateTime}, #{lastUrlUpdateEndTime},
+                #{lastCollectDataEndTime}, #{lastRefreshHistoricalDataEndTime},
+                #{lastPostProcessTime},
+                #{lastCollectDataTime},
+                #{lastRefreshHistoricalDataTime},
+                #{createTime}, #{modifyTime})
     </insert>
 
+
     <insert id="insertTweetSearchKeywords" parameterType="java.util.List">
-        INSERT INTO tweet_search_keyword (keyword,init_status,init_data_number,is_deleted,refresh_data_flag,lastUrlUpdateTime,last_collect_data_time,last_refresh_historical_data_time
-        ,create_time,modify_time)
+        INSERT INTO tweet_search_keyword (keyword, init_status, init_data_number, is_deleted, refresh_data_flag,
+        last_url_update_time, last_url_update_end_time, last_collect_data_time,
+        last_collect_data_end_time, last_refresh_historical_data_time,
+        last_refresh_historical_data_end_time, last_post_process_time, create_time,
+        modify_time)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            ( #{keyword},#{initStatus},#{initDataNumber},#{isDeleted}, #{refreshDataFlag}, #{lastUrlUpdateTime}, #{lastCollectDataTime}, #{lastRefreshHistoricalDataTime},
-            #{item.createTime},#{modifyTime})
+            (
+            <trim suffixOverrides=",">
+                <if test="item.keyword != null">#{item.keyword},</if>
+                <if test="item.initStatus != null">#{item.initStatus},</if>
+                <if test="item.initDataNumber != null">#{item.initDataNumber},</if>
+                <if test="item.isDeleted != null">#{item.isDeleted},</if>
+                <if test="item.refreshDataFlag != null">#{item.refreshDataFlag},</if>
+                <if test="item.lastUrlUpdateTime != null">#{item.lastUrlUpdateTime},</if>
+                <if test="item.lastUrlUpdateEndTime != null">#{item.lastUrlUpdateEndTime},</if>
+                <if test="item.lastCollectDataTime != null">#{item.lastCollectDataTime},</if>
+                <if test="item.lastCollectDataEndTime != null">#{item.lastCollectDataEndTime},</if>
+                <if test="item.lastRefreshHistoricalDataTime != null">#{item.lastRefreshHistoricalDataTime},</if>
+                <if test="item.lastRefreshHistoricalDataEndTime != null">#{item.lastRefreshHistoricalDataEndTime},</if>
+                <if test="item.lastPostProcessTime != null">#{item.lastPostProcessTime},</if>
+                <if test="item.createTime != null">#{item.createTime},</if>
+                <if test="item.modifyTime != null">#{item.modifyTime},</if>
+            </trim>
+            )
         </foreach>
     </insert>
+
 
     <select id="queryTweetSearchKeywords" resultMap="BaseResultMap">
         SELECT
@@ -58,7 +98,7 @@
         WHERE id = #{id}
     </update>
 
-    <update id="update">
+    <update id="update" parameterType="com.daniel.ltc20.domain.TweetSearchKeyword">
         UPDATE tweet_search_keyword
         SET
         <if test="keyword != null">
@@ -79,11 +119,23 @@
         <if test="lastUrlUpdateTime != null">
             last_url_update_time = #{lastUrlUpdateTime},
         </if>
+        <if test="lastUrlUpdateEndTime != null">
+            last_url_update_end_time = #{lastUrlUpdateEndTime},
+        </if>
         <if test="lastCollectDataTime != null">
             last_collect_data_time = #{lastCollectDataTime},
         </if>
+        <if test="lastCollectDataEndTime != null">
+            last_collect_data_end_time = #{lastCollectDataEndTime},
+        </if>
         <if test="lastRefreshHistoricalDataTime != null">
             last_refresh_historical_data_time = #{lastRefreshHistoricalDataTime},
+        </if>
+        <if test="lastRefreshHistoricalDataEndTime != null">
+            last_refresh_historical_data_end_time = #{lastRefreshHistoricalDataEndTime},
+        </if>
+        <if test="lastPostProcessTime != null">
+            last_post_process_time = #{lastPostProcessTime},
         </if>
         <if test="createTime != null">
             create_time = #{createTime},
@@ -93,4 +145,5 @@
         </if>
         WHERE id = #{id}
     </update>
+
 </mapper>

@@ -27,4 +27,6 @@ public interface TweetSearchKeywordService {
     TweetSearchKeyword getLastCollectedRandomDataFromYesterday();
 
     TweetSearchKeyword getLastRefreshHistoricalDataFromYesterday();
+
+    TweetSearchKeyword queryUnPostProcessKeyword();
 }
