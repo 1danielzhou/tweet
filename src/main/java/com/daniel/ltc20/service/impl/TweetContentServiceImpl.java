@@ -235,7 +235,7 @@ public class TweetContentServiceImpl implements TweetContentService {
                     continue;
                 }
                 TweetUrl tweetUrl = tweetUrls.get(i);
-                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, tweetUrl.getTweetUrl(),searchKey);
+                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, tweetUrl.getTweetUrl(), searchKey);
                 if (ObjectUtil.isEmpty(tweetContent)) {
                     continue;
                 }
@@ -258,13 +258,24 @@ public class TweetContentServiceImpl implements TweetContentService {
     @Override
     public boolean searchStoreYesterdayTweet(String searchKey) {
         List<TweetUrl> yesterdayTweetUrls = getYesterdayTweetUrls(searchKey);
-        return searchStoreTweet(searchKey, yesterdayTweetUrls);
+        return searchStoreTweets(searchKey, yesterdayTweetUrls);
     }
 
     @Override
     public boolean refreshPast7DaysTweet(String keyword) {
         List<TweetUrl> past7daysTweetUrls = getPast7daysTweetUrls(keyword);
-        return searchStoreTweet(keyword, past7daysTweetUrls);
+        return searchStoreTweets(keyword, past7daysTweetUrls);
+    }
+
+    private boolean searchStoreTweets(String searchKey, List<TweetUrl> tweetUrls) {
+        List<List<TweetUrl>> lists = splitListIntoChunks(tweetUrls, 50);
+        for (List<TweetUrl> list : lists) {
+            boolean result = searchStoreTweet(searchKey, list);
+            if (!result) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private List<TweetUrl> getPast7daysTweetUrls(String keyword) {
@@ -275,5 +286,18 @@ public class TweetContentServiceImpl implements TweetContentService {
     private List<TweetUrl> getYesterdayTweetUrls(String searchKey) {
         Pair<Date, Date> yesterdayTimeRange = TimeUtil.getYesterdayTimeRange();
         return tweetUrlService.getTweetUrlsByTimeRange(searchKey, yesterdayTimeRange.getKey(), yesterdayTimeRange.getValue());
+    }
+
+    public List<List<TweetUrl>> splitListIntoChunks(List<TweetUrl> originalList, int chunkSize) {
+        List<List<TweetUrl>> dividedList = new ArrayList<>();
+
+        int listSize = originalList.size();
+        for (int i = 0; i < listSize; i += chunkSize) {
+            int endIndex = Math.min(i + chunkSize, listSize);
+            List<TweetUrl> sublist = originalList.subList(i, endIndex);
+            dividedList.add(sublist);
+        }
+
+        return dividedList;
     }
 }
