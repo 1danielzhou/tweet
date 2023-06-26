@@ -9,6 +9,7 @@ import com.daniel.ltc20.domain.TweetUrl;
 import com.daniel.ltc20.model.TweetContent;
 import com.daniel.ltc20.service.*;
 import com.daniel.ltc20.utils.CollectionUtil;
+import com.daniel.ltc20.utils.MonitorMachineUtil;
 import com.daniel.ltc20.utils.TimeUtil;
 import com.daniel.ltc20.utils.TweetUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -175,6 +176,8 @@ public class TweetContentServiceImpl implements TweetContentService {
                     log.info("滚到底了");
                     break;
                 }
+
+                MonitorMachineUtil.monitorSystemLoadAverage();
             }
         } catch (Exception e) {
             log.error("获取最新推特Urls时出现错误，请检查响应的代码！！！");
@@ -245,6 +248,8 @@ public class TweetContentServiceImpl implements TweetContentService {
                 tweetContent.getTweetBaseContent().setTweetContentCreateTime(tweetUrl.getTweetCreateTime());
                 log.info("一共有{}条数据，目前收集到第{}条数据，收集到的数据为{}", totalSize, (start_index + i + 1), tweetContent);
                 this.insertTweetContent(tweetContent);
+
+                MonitorMachineUtil.monitorSystemLoadAverage();
             }
         } catch (Exception e) {
             log.error("收集tweet信息的时候出错，{}", e);
