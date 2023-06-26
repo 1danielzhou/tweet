@@ -26,6 +26,7 @@ import java.util.List;
 @Slf4j
 @Service
 public class TweetContentServiceImpl implements TweetContentService {
+    public static final Integer SLICE_SIZE = 50;
     @Autowired
     private TweetBaseContentService tweetBaseContentService;
 
@@ -75,7 +76,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             browser.get(tweetUrl);
             Thread.sleep(3000);
             Integer index = TweetUtil.locateIndex(browser, tweetUrl);
-            log.info("该链接的内容位于页面的第{}个", index);
+            log.info("{},该链接的内容位于页面的第{}个", tweetUrl, index);
             if (ObjectUtil.isEmpty(index)) {
                 return null;
             }
@@ -220,7 +221,7 @@ public class TweetContentServiceImpl implements TweetContentService {
         return true;
     }
 
-    private boolean searchStoreTweet(String searchKey, List<TweetUrl> tweetUrls) {
+    private boolean searchStoreTweet(int totalSize, int start_index, String searchKey, List<TweetUrl> tweetUrls) {
         if (CollUtil.isEmpty(tweetUrls)) {
             return true;
         }
@@ -242,11 +243,12 @@ public class TweetContentServiceImpl implements TweetContentService {
                 tweetContent.getTweetBaseContent().setSearchKey(searchKey);
                 tweetContent.getTweetBaseContent().setLabel("latest");
                 tweetContent.getTweetBaseContent().setTweetContentCreateTime(tweetUrl.getTweetCreateTime());
-                log.info("一共有{}条数据，目前收集到第{}条数据，收集到的数据为{}", tweetUrls.size(), (i + 1), tweetContent);
+                log.info("一共有{}条数据，目前收集到第{}条数据，收集到的数据为{}", totalSize, (start_index + i + 1), tweetContent);
                 this.insertTweetContent(tweetContent);
             }
         } catch (Exception e) {
             log.error("收集tweet信息的时候出错，{}", e);
+            return false;
         } finally {
             if (ObjectUtil.isNotEmpty(webDriver)) {
                 webDriver.quit();
@@ -258,19 +260,21 @@ public class TweetContentServiceImpl implements TweetContentService {
     @Override
     public boolean searchStoreYesterdayTweet(String searchKey) {
         List<TweetUrl> yesterdayTweetUrls = getYesterdayTweetUrls(searchKey);
+        log.info("关键词{}，一共收集到{}条昨天新增的数据", searchKey, yesterdayTweetUrls.size());
         return searchStoreTweets(searchKey, yesterdayTweetUrls);
     }
 
     @Override
     public boolean refreshPast7DaysTweet(String keyword) {
         List<TweetUrl> past7daysTweetUrls = getPast7daysTweetUrls(keyword);
+        log.info("关键词{}，一共收集到{}条过去7天未更新的数据", keyword, past7daysTweetUrls.size());
         return searchStoreTweets(keyword, past7daysTweetUrls);
     }
 
     private boolean searchStoreTweets(String searchKey, List<TweetUrl> tweetUrls) {
-        List<List<TweetUrl>> lists = splitListIntoChunks(tweetUrls, 50);
-        for (List<TweetUrl> list : lists) {
-            boolean result = searchStoreTweet(searchKey, list);
+        List<List<TweetUrl>> lists = splitListIntoChunks(tweetUrls, SLICE_SIZE);
+        for (int i = 0; i < lists.size(); i++) {
+            boolean result = searchStoreTweet(tweetUrls.size(), SLICE_SIZE * i, searchKey, lists.get(i));
             if (!result) {
                 return false;
             }

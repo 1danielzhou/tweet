@@ -253,7 +253,7 @@ public class TweetSearchKeywordServiceImpl implements TweetSearchKeywordService 
         List<TweetSearchKeyword> unupdatedKeywords = new ArrayList<>();
         for (TweetSearchKeyword keyword : tweetSearchKeywords) {
             try {
-                if (keyword.getLastRefreshHistoricalDataTime().after(yesterdayTimeRange.getKey()) && keyword.getLastRefreshHistoricalDataTime().before(yesterdayTimeRange.getValue())) { // 将interval转换为秒
+                if (keyword.getLastRefreshHistoricalDataTime().before(yesterdayTimeRange.getValue())) { // 将interval转换为秒
                     unupdatedKeywords.add(keyword);
                 }
             } catch (Exception e) {

@@ -11,6 +11,7 @@ import com.daniel.ltc20.service.TweetRelationPostViewService;
 import com.daniel.ltc20.service.TweetViewDailyService;
 import com.daniel.ltc20.utils.MathUtil;
 import com.daniel.ltc20.utils.TimeUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class TweetRelationPostViewServiceImpl implements TweetRelationPostViewService {
     @Autowired
@@ -37,12 +39,14 @@ public class TweetRelationPostViewServiceImpl implements TweetRelationPostViewSe
                 TweetRelationPostView relationPostView = findByCollectDate(tweetRelationPostViews, tweetRelationPostView.getCollectDate());
                 if (ObjectUtil.isEmpty(relationPostView)) {
                     tweetRelationPostViewDao.insertTweetRelationPostView(tweetRelationPostView);
+                    log.info("{}的PostView是新纪录，插入成功",tweetId);
                 } else {
                     tweetRelationPostViewDao.update(TweetRelationPostView.builder()
                             .id(relationPostView.getId())
                             .viewNumber(tweetRelationPostView.getViewNumber())
                             .modifyTime(new Date())
                             .build());
+                    log.info("{}的PostView已经存在，更新成功",tweetId);
                 }
             }
         } else {

@@ -32,7 +32,7 @@ public class TweetContentJob {
     @Autowired
     private TweetRelationPostViewService tweetRelationPostViewService;
 
-    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
+//    @Scheduled(cron = "0 0/1 4-23 * * ?") // 每分钟执行一次
     public void getTweetUrl() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getRandomUnupdatedDataWithinInterval(INTERVAL);
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
@@ -59,7 +59,7 @@ public class TweetContentJob {
         }
     }
 
-    @Scheduled(cron = "0 0/1 * * * ?")
+//    @Scheduled(cron = "0 0/1 * * * ?")
     public void searchStoreYesterdayTweet() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getLastCollectedRandomDataFromYesterday();
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
@@ -85,7 +85,7 @@ public class TweetContentJob {
         }
     }
 
-//    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
+    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
     public void refreshHistoricalTweet() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getLastRefreshHistoricalDataFromYesterday();
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
@@ -110,7 +110,7 @@ public class TweetContentJob {
         }
     }
 
-//    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
+    @Scheduled(cron = "0 0/1 * * * ?") // 每分钟执行一次
     public void postProcessTweet() {
         TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.queryUnPostProcessKeyword();
         if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {

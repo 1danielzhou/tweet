@@ -39,7 +39,7 @@
         INSERT INTO tweet_r_post_view (keyword,tweet_id, collect_date, view_number, create_time,modify_time)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{keyword},#{item.tweetId}, #{item.collectDate}, #{item.viewNumber}, #{item.createTime}, #{item.modifyTime})
+            (#{item.keyword},#{item.tweetId}, #{item.collectDate}, #{item.viewNumber}, #{item.createTime}, #{item.modifyTime})
         </foreach>
     </insert>
 

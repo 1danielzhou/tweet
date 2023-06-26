@@ -34,22 +34,36 @@ public class TweetUtil {
         if (driver == null || tweetUrl == null) {
             return null;
         }
-        try {
-            String tweetContentId = tweetUrl.substring(tweetUrl.lastIndexOf('/') + 1);
-            for (int index = 1; index < 10; index++) {
-                List<String> matchedLinks = getMatchedLinksByIndex(driver, index);
-                for (String link : matchedLinks) {
-                    if (link.endsWith("/status/" + tweetContentId)) {
-                        return index;
+
+        String tweetContentId = tweetUrl.substring(tweetUrl.lastIndexOf('/') + 1);
+        int maxAttempts = 10;
+        int index = 1;
+        List<String> matchedLinks = null;
+
+        while (index <= maxAttempts) {
+            try {
+                matchedLinks = getMatchedLinksByIndex(driver, index);
+                if (matchedLinks != null) {
+                    for (String link : matchedLinks) {
+                        if (link.endsWith("/status/" + tweetContentId)) {
+                            return index;
+                        }
                     }
                 }
+            } catch (Exception e) {
+                log.info("获取index失败，也许是页面加载问题，重新加载，再次尝试获取。出问题的tweet url为：{}",tweetUrl);
+                driver.get(tweetUrl);
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
-            return null;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            index++;
         }
+        return null;
     }
+
 
     public static List<String> getMatchedLinksByIndex(WebDriver driver, int index) {
         List<String> matchedLinks = new ArrayList<>();
