@@ -55,7 +55,7 @@ public class TweetLoginServiceImpl implements TweetLoginService {
         try {
             assert browser != null;
             browser.get(START_URL);
-            Thread.sleep(5000);
+            Thread.sleep(10000);
 
             if (isUserLoggedIn(browser)) {
                 log.info("已经登录了，不需要重复登录");
@@ -63,12 +63,19 @@ public class TweetLoginServiceImpl implements TweetLoginService {
             }
             if (!inputNumber(browser, tweetAccount.getNumber()) || !inputPassword(browser, tweetAccount.getPassword()) || !inputUserId(browser, tweetAccount.getUserId())) {
                 log.info("{}，登录失败", tweetAccount);
+                if (ObjectUtil.isNotEmpty(browser)) {
+                    browser.quit();
+                }
                 return null;
             }
             log.info("{}，登录成功", tweetAccount);
             return browser;
         } catch (Exception e) {
             log.error("登录失败");
+            if (ObjectUtil.isNotEmpty(browser)) {
+                browser.quit();
+                browser = null;
+            }
         }
         return browser;
     }

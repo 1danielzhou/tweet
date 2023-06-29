@@ -7,6 +7,7 @@ import cn.hutool.core.util.StrUtil;
 import com.daniel.ltc20.domain.TweetRelationPostView;
 import com.daniel.ltc20.domain.TweetUrl;
 import com.daniel.ltc20.model.TweetContent;
+import com.daniel.ltc20.pool.WebDriverPool;
 import com.daniel.ltc20.service.*;
 import com.daniel.ltc20.utils.CollectionUtil;
 import com.daniel.ltc20.utils.MonitorMachineUtil;
@@ -41,7 +42,7 @@ public class TweetContentServiceImpl implements TweetContentService {
     private TweetRelationTopicService tweetRelationTopicService;
 
     @Autowired
-    private TweetLoginService tweetLoginService;
+    private WebDriverPool webDriverPool;
 
     @Autowired
     private TweetUrlService tweetUrlService;
@@ -75,7 +76,7 @@ public class TweetContentServiceImpl implements TweetContentService {
         try {
             TweetContent tweetContent = new TweetContent();
             browser.get(tweetUrl);
-            Thread.sleep(3000);
+            Thread.sleep(5000);
             Integer index = TweetUtil.locateIndex(browser, tweetUrl);
             log.info("{},该链接的内容位于页面的第{}个", tweetUrl, index);
             if (ObjectUtil.isEmpty(index)) {
@@ -122,7 +123,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             log.error("searchKey不允许为空！！！");
             return new ArrayList<>();
         }
-        WebDriver browser = tweetLoginService.loginWithRandomAccount();
+        WebDriver browser = webDriverPool.getWebDriver();
         if (ObjectUtil.isEmpty(browser)) {
             log.error("browser不允许为空！！！");
             return new ArrayList<>();
@@ -183,7 +184,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             log.error("获取最新推特Urls时出现错误，请检查响应的代码！！！");
         } finally {
             if (ObjectUtil.isNotEmpty(browser)) {
-                browser.quit();
+                webDriverPool.releaseWebDriver(browser);
             }
         }
         List<TweetUrl> uniqueTweetUrls = CollectionUtil.removeDuplicates(tweetUrls);
@@ -191,46 +192,14 @@ public class TweetContentServiceImpl implements TweetContentService {
         return uniqueTweetUrls;
     }
 
-    private boolean searchStoreTweet_v1(String searchKey, List<String> urls) {
-        if (CollUtil.isEmpty(urls)) {
-            return true;
-        }
-        WebDriver webDriver = null;
-        try {
-            webDriver = tweetLoginService.loginWithRandomAccount();
-            if (ObjectUtil.isEmpty(webDriver)) {
-                return false;
-            }
-            for (int i = 0; i < urls.size(); i++) {
-                if (StrUtil.isBlank(urls.get(i))) {
-                    continue;
-                }
-                TweetContent tweetContent = this.queryTweetContentByUrl(webDriver, urls.get(i), searchKey);
-                if (ObjectUtil.isEmpty(tweetContent)) {
-                    continue;
-                }
-                tweetContent.getTweetBaseContent().setSearchKey(searchKey);
-                tweetContent.getTweetBaseContent().setLabel("latest");
-                log.info("一共有{}条数据，目前收集到第{}条数据，收集到的数据为{}", urls.size(), i, tweetContent);
-                this.insertTweetContent(tweetContent);
-            }
-        } catch (Exception e) {
-            log.error("收集tweet信息的时候出错，{}", e);
-        } finally {
-            if (ObjectUtil.isNotEmpty(webDriver)) {
-                webDriver.quit();
-            }
-        }
-        return true;
-    }
-
-    private boolean searchStoreTweet(int totalSize, int start_index, String searchKey, List<TweetUrl> tweetUrls) {
+    private boolean searchStoreTweet(int totalSize, int sliceSize, String searchKey, List<TweetUrl> tweetUrls) {
         if (CollUtil.isEmpty(tweetUrls)) {
             return true;
         }
+        MonitorMachineUtil.monitorSystemLoadAverage();
         WebDriver webDriver = null;
         try {
-            webDriver = tweetLoginService.loginWithRandomAccount();
+            webDriver = webDriverPool.getWebDriver();
             if (ObjectUtil.isEmpty(webDriver)) {
                 return false;
             }
@@ -246,7 +215,7 @@ public class TweetContentServiceImpl implements TweetContentService {
                 tweetContent.getTweetBaseContent().setSearchKey(searchKey);
                 tweetContent.getTweetBaseContent().setLabel("latest");
                 tweetContent.getTweetBaseContent().setTweetContentCreateTime(tweetUrl.getTweetCreateTime());
-                log.info("一共有{}条数据，目前收集到第{}条数据，收集到的数据为{}", totalSize, (start_index + i + 1), tweetContent);
+                log.info("一共有{}条数据,每个线程分担的任务是{}条，目前本线程收集到第{}条数据，收集到的数据为{}", totalSize, sliceSize, (i + 1), tweetContent);
                 this.insertTweetContent(tweetContent);
 
                 MonitorMachineUtil.monitorSystemLoadAverage();
@@ -256,7 +225,7 @@ public class TweetContentServiceImpl implements TweetContentService {
             return false;
         } finally {
             if (ObjectUtil.isNotEmpty(webDriver)) {
-                webDriver.quit();
+                webDriverPool.releaseWebDriver(webDriver);
             }
         }
         return true;

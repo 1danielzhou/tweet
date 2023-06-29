@@ -117,7 +117,7 @@ public class TweetContentJob {
 
                 tweetSearchKeywordService.update(TweetSearchKeyword.builder()
                         .id(tweetSearchKeyword.getId())
-                        .lastRefreshHistoricalDataTime(tweetSearchKeyword.getLastCollectDataTime())
+                        .lastRefreshHistoricalDataTime(tweetSearchKeyword.getLastRefreshHistoricalDataTime())
                         .modifyTime(new Date())
                         .build());
             } else {

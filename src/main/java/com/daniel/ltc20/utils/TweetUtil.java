@@ -1,5 +1,6 @@
 package com.daniel.ltc20.utils;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.daniel.ltc20.domain.TweetRelationMention;
@@ -12,6 +13,7 @@ import org.openqa.selenium.WebElement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,30 +38,32 @@ public class TweetUtil {
         }
 
         String tweetContentId = tweetUrl.substring(tweetUrl.lastIndexOf('/') + 1);
-        int maxAttempts = 10;
-        int index = 1;
-        List<String> matchedLinks = null;
 
-        while (index <= maxAttempts) {
-            try {
-                matchedLinks = getMatchedLinksByIndex(driver, index);
-                if (matchedLinks != null) {
-                    for (String link : matchedLinks) {
-                        if (link.endsWith("/status/" + tweetContentId)) {
-                            return index;
+        for (int attempts = 0; attempts < 10; attempts++) {
+            log.info("第{}次尝试获取tweet位于页面的位置", (attempts + 1));
+            for (int index = 0; index < 10; index++) {
+                try {
+                    List<String> matchedLinks = getMatchedLinksByIndex(driver, index);
+                    if (CollUtil.isNotEmpty(matchedLinks)) {
+                        for (String link : matchedLinks) {
+                            if (link.endsWith("/status/" + tweetContentId)) {
+                                return index;
+                            }
                         }
                     }
+                } catch (Exception e) {
+                    log.info("获取index失败，也许是页面加载问题，重新加载，再次尝试获取。出问题的tweet url为：{}", tweetUrl);
                 }
-            } catch (Exception e) {
-                log.info("获取index失败，也许是页面加载问题，重新加载，再次尝试获取。出问题的tweet url为：{}",tweetUrl);
-                driver.get(tweetUrl);
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException ex) {
-                    throw new RuntimeException(ex);
-                }
+                MonitorMachineUtil.monitorSystemLoadAverage();
             }
-            index++;
+
+            driver.get(tweetUrl);
+            try {
+                TimeUnit.SECONDS.sleep(3);
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+            MonitorMachineUtil.monitorSystemLoadAverage();
         }
         return null;
     }
@@ -218,7 +222,7 @@ public class TweetUtil {
                 String utcDatetime = tweetContentCreateTimeDiv.getAttribute("datetime");
                 Date shanghaiDate = TimeUtil.convertToShanghaiTime(utcDatetime);
                 log.info(StrUtil.format("解析获取到的时间为：{}", shanghaiDate));
-                return TimeUtil.isWithinIntervalHours(shanghaiDate,interval);
+                return TimeUtil.isWithinIntervalHours(shanghaiDate, interval);
             } catch (Exception e) {
                 try {
                     Thread.sleep(1000);
