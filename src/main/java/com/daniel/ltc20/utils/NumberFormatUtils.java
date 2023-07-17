@@ -17,7 +17,6 @@ public class NumberFormatUtils {
 
     public static String convertTo26Base(int number) {
         StringBuilder result = new StringBuilder();
-
         while (number > 0) {
             number--; // 由于26进制不包含0，所以每次减1进行转换
             int remainder = number % 26;
@@ -25,7 +24,6 @@ public class NumberFormatUtils {
             result.insert(0, ch);
             number /= 26;
         }
-
         return result.toString();
     }
 
