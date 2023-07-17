@@ -1,50 +1,83 @@
 package com.daniel.ltc20.job;
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.ObjectUtil;
-import com.daniel.ltc20.domain.TweetSearchKeyword;
-import com.daniel.ltc20.domain.TweetUrl;
-import com.daniel.ltc20.service.TweetContentService;
-import com.daniel.ltc20.service.TweetSearchKeywordService;
-import com.daniel.ltc20.service.TweetUrlService;
+import com.daniel.ltc20.utils.BrowserUtils;
+import com.daniel.ltc20.utils.FileUtils;
+import com.daniel.ltc20.utils.NumberFormatUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
-
-import java.util.Date;
-import java.util.List;
 
 @Slf4j
 @Service
 public class TweetContentJob {
-    private static final int INTERVAL = 2;
-    @Autowired
-    private TweetSearchKeywordService tweetSearchKeywordService;
-
-    @Autowired
-    private TweetContentService tweetContentService;
-
-    @Autowired
-    private TweetUrlService tweetUrlService;
-
-    @Scheduled(cron = "0 0/1 * * * ?") // 每小时执行一次
-    public void executeHourlyTask() {
-        TweetSearchKeyword tweetSearchKeyword = tweetSearchKeywordService.getRandomUnupdatedDataWithinInterval(INTERVAL);
-        if (ObjectUtil.isNotEmpty(tweetSearchKeyword)) {
-            log.info("关键词{}的Urls在{}小时内未更新，下面尝试进行更新操作,{}", tweetSearchKeyword.getKeyword(), INTERVAL, tweetSearchKeyword);
-            List<TweetUrl> tweetUrls = tweetContentService.searchLatestTweetUrls(tweetSearchKeyword.getKeyword(), 5000, 100);
-            if (CollUtil.isEmpty(tweetUrls)) {
-                log.info("获取Url失败或者获取为空，将lastUrlUpdateTime还原回：{},以便再次获取",tweetSearchKeyword.getLastUrlUpdateTime());
-                tweetSearchKeywordService.update(TweetSearchKeyword.builder()
-                        .id(tweetSearchKeyword.getId())
-                        .lastUrlUpdateTime(tweetSearchKeyword.getLastUrlUpdateTime())
-                        .modifyTime(new Date())
-                        .build());
-            }else{
-                log.info("一共获取到{}个链接，将其插入数据库中", tweetUrls.size());
-                tweetUrlService.insertTweetUrls(tweetUrls);
+    @EventListener(ApplicationReadyEvent.class)
+    public void querySatsDomain() {
+        String sats_str = "https://unisat.io/brc20-api-v2/inscriptions/category/sats/search/v2?name={}.sats&limit=32&start=0";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 1000000; i++) {
+                    for (int j = 1; j < 7; j++) {
+                        String number_str = NumberFormatUtils.formatNumber(i, j);
+                        if (!BrowserUtils.judgeDomainExist("sats", sats_str, number_str)) {
+                            FileUtils.writeToFile("domains.txt", number_str + "." + "sats");
+                        }
+                    }
+                }
             }
-        }
+        }).start();
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void queryUniSatsDomain() {
+        String unisats_str = "https://unisat.io/brc20-api-v2/inscriptions/category/unisat/search/v2?name={}.unisat&limit=32&start=0";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 14; i < 1000000; i++) {
+                    for (int j = 0; j < 7; j++) {
+                        String number_str = NumberFormatUtils.formatNumber(i, j);
+                        if (!BrowserUtils.judgeDomainExist("unisat", unisats_str, number_str)) {
+                            System.out.println(number_str);
+                            FileUtils.writeToFile("domains.txt", number_str + "." + "unisat");
+                        }
+                    }
+                }
+            }
+        }).start();
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void querySatsCharDomain() {
+        String sats_str = "https://unisat.io/brc20-api-v2/inscriptions/category/sats/search/v2?name={}.sats&limit=32&start=0";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 1000000; i++) {
+                    String number_str = NumberFormatUtils.convertTo26Base(i);
+                    if (!BrowserUtils.judgeDomainExist("sats", sats_str, number_str)) {
+                        FileUtils.writeToFile("domains.txt", number_str + "." + "sats");
+                    }
+                }
+            }
+        }).start();
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void queryUniSatsCharDomain() {
+        String unisats_str = "https://unisat.io/brc20-api-v2/inscriptions/category/unisat/search/v2?name={}.unisat&limit=32&start=0";
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 1000000; i++) {
+                    String number_str = NumberFormatUtils.convertTo26Base(i);
+                    if (!BrowserUtils.judgeDomainExist("unisat", unisats_str, number_str)) {
+                        System.out.println(number_str);
+                        FileUtils.writeToFile("domains.txt", number_str + "." + "unisat");
+                    }
+                }
+            }
+        }).start();
     }
 }
