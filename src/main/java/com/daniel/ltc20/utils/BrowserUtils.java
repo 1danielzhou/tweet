@@ -18,9 +18,9 @@ public class BrowserUtils {
     public static boolean judgeExisted(String value, String domainSubStr) {
         try {
             Set<String> allFullNames = getAllFullNames(value, domainSubStr);
-            log.info("查询{}，查询到{}条数据", value + "." + domainSubStr, allFullNames.size());
-            if (allFullNames.contains(value + "." + domainSubStr)) {
-                log.info("域名：{},已经存在", value + "." + domainSubStr);
+            log.info("查询{}，查询到{}条数据", value, allFullNames.size());
+            if (allFullNames.contains(value)) {
+                log.info("域名：{},已经存在", value);
                 return true;
             }
         } catch (Exception e) {
